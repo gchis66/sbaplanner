@@ -83,7 +83,8 @@ export default function Home() {
             Generate SBA-ready business plans in under 20 minutes
           </h1>
           <p className="text-xl mb-8 opacity-90">
-            Skip the complexity and fast-track your funding with our AI platform
+            Whether you&apos;re starting a new venture or growing an established
+            business, fast-track your SBA funding with our AI platform
           </p>
           <button
             onClick={() => setShowForm(true)}

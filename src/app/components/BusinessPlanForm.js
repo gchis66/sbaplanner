@@ -5,21 +5,29 @@ import PlanModal from "./PlanModal";
 
 const formSteps = [
   {
+    title: "Business Status",
+    fields: ["businessStatus"],
+  },
+  {
     title: "Basic Information",
     fields: [
       "businessName",
       "businessDescription",
+      "email",
       "personnel",
       "legalStructure",
+      "yearsInOperation",
+      "currentRevenue",
+      "currentEmployees",
     ],
   },
   {
     title: "Products & Services",
-    fields: ["productsServices", "uniqueFeatures"],
+    fields: ["productsServices", "uniqueFeatures", "currentMarketPresence"],
   },
   {
     title: "Market Analysis",
-    fields: ["targetMarket", "customerNeed", "competition"],
+    fields: ["targetMarket", "customerNeed", "competition", "marketPosition"],
   },
   {
     title: "Sales & Marketing",
@@ -29,6 +37,7 @@ const formSteps = [
       "brandMessage",
       "marketingMethods",
       "onlinePresence",
+      "existingCustomerBase",
     ],
   },
   {
@@ -38,6 +47,7 @@ const formSteps = [
       "productionProcess",
       "inventoryFulfillment",
       "regulations",
+      "operationalHistory",
     ],
   },
   {
@@ -48,21 +58,29 @@ const formSteps = [
       "scalabilityPlans",
       "initialFunding",
       "profitabilityTimeline",
+      "historicalFinancials",
+      "fundingPurpose",
       "qualityFeedback",
     ],
   },
 ];
 
 const fieldLabels = {
+  businessStatus: "Business Status",
   businessName: "Business Name",
   businessDescription: "Business Description (one sentence)",
   personnel: "Principal Members & Roles",
   legalStructure: "Legal Structure",
+  yearsInOperation: "Years in Operation",
+  currentRevenue: "Current Annual Revenue",
+  currentEmployees: "Current Number of Employees",
   productsServices: "Products/Services Offered",
   uniqueFeatures: "Unique Features/Value Proposition",
+  currentMarketPresence: "Current Market Presence and Track Record",
   targetMarket: "Target Market",
   customerNeed: "Customer Need/Problem",
   competition: "Competition & Differentiation",
+  marketPosition: "Current Market Position",
   pricingStrategy: "Pricing Strategy",
   salesChannels: "Sales Channels",
   location: "Location & Facilities",
@@ -71,26 +89,48 @@ const fieldLabels = {
   brandMessage: "Brand Message",
   marketingMethods: "Marketing Methods",
   onlinePresence: "Online Presence Strategy",
+  existingCustomerBase: "Existing Customer Base and Relationships",
   regulations: "Regulatory Requirements",
-  shortTermGoals: "Short-term Goals",
-  longTermGoals: "Long-term Goals",
-  scalabilityPlans: "Scalability Plans",
-  initialFunding: "Initial Funding Requirements",
-  profitabilityTimeline: "Profitability Timeline",
+  operationalHistory: "Operational History and Improvements",
+  shortTermGoals: "Short-term Goals (Next 12 Months)",
+  longTermGoals: "Long-term Goals (2-5 Years)",
+  scalabilityPlans: "Growth and Scalability Plans",
+  initialFunding: "Funding Requirements",
+  historicalFinancials: "Historical Financial Performance",
+  fundingPurpose: "Purpose of SBA Funding",
+  profitabilityTimeline: "Profitability Timeline/Projections",
   qualityFeedback: "Quality Control & Customer Feedback",
+  email: "Email Address (for receiving your plan)",
 };
+
+const establishedOnlyFields = [
+  "yearsInOperation",
+  "currentRevenue",
+  "currentEmployees",
+  "currentMarketPresence",
+  "marketPosition",
+  "existingCustomerBase",
+  "operationalHistory",
+  "historicalFinancials",
+];
 
 export default function BusinessPlanForm() {
   const [formData, setFormData] = useState({
+    businessStatus: "",
     businessName: "",
     businessDescription: "",
     personnel: "",
     legalStructure: "",
+    yearsInOperation: "",
+    currentRevenue: "",
+    currentEmployees: "",
     productsServices: "",
     uniqueFeatures: "",
+    currentMarketPresence: "",
     targetMarket: "",
     customerNeed: "",
     competition: "",
+    marketPosition: "",
     pricingStrategy: "",
     salesChannels: "",
     location: "",
@@ -99,43 +139,100 @@ export default function BusinessPlanForm() {
     brandMessage: "",
     marketingMethods: "",
     onlinePresence: "",
+    existingCustomerBase: "",
     regulations: "",
+    operationalHistory: "",
     shortTermGoals: "",
     longTermGoals: "",
     scalabilityPlans: "",
     initialFunding: "",
+    historicalFinancials: "",
+    fundingPurpose: "",
     profitabilityTimeline: "",
     qualityFeedback: "",
+    email: "",
   });
 
+  const [logo, setLogo] = useState(null);
+  const [logoPreview, setLogoPreview] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
-  const [showModal, setShowModal] = useState(false);
-  const [generatedPlan, setGeneratedPlan] = useState("");
+  const [status, setStatus] = useState({ type: null, message: "" });
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
+        alert("Logo file size must be less than 5MB");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        alert("Please upload an image file");
+        return;
+      }
+      setLogo(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setStatus({ type: null, message: "" });
 
     try {
-      const response = await fetch("/api/generatePlan", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userData: formData }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const formDataToSend = new FormData();
+      formDataToSend.append("userData", JSON.stringify(formData));
+      if (logo) {
+        formDataToSend.append("logo", logo);
       }
 
+      const response = await fetch("/api/generatePlan", {
+        method: "POST",
+        body: formDataToSend,
+      });
+
       const data = await response.json();
-      setGeneratedPlan(data.plan);
-      setShowModal(true);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate business plan");
+      }
+
+      if (data.emailSent) {
+        setStatus({
+          type: "success",
+          message: `Success! Your business plan has been sent to ${formData.email}. Please check your email (including spam folder).`,
+        });
+        // Reset form
+        setFormData({
+          businessStatus: "",
+          businessName: "",
+          // ... reset all other fields
+        });
+        setLogo(null);
+        setLogoPreview("");
+        setCurrentStep(0);
+      } else {
+        setStatus({
+          type: "error",
+          message:
+            data.emailError ||
+            "Failed to send email. Please try again or contact support.",
+        });
+      }
     } catch (error) {
       console.error("Error:", error);
-      alert("Error generating business plan. Please try again.");
+      setStatus({
+        type: "error",
+        message:
+          error.message ||
+          "An error occurred. Please try again or contact support.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -161,12 +258,84 @@ export default function BusinessPlanForm() {
   const progress = ((currentStep + 1) / formSteps.length) * 100;
 
   const renderField = (fieldName) => {
+    if (fieldName === "businessName" && currentStep === 1) {
+      return (
+        <>
+          <div key={fieldName} className="mb-6">
+            <label className="block mb-2 font-medium text-gray-700">
+              {fieldLabels[fieldName]}
+            </label>
+            <input
+              type="text"
+              name={fieldName}
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData[fieldName]}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block mb-2 font-medium text-gray-700">
+              Company Logo (optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoChange}
+              className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {logoPreview && (
+              <div className="mt-2">
+                <img
+                  src={logoPreview}
+                  alt="Logo preview"
+                  className="max-w-[200px] max-h-[200px] object-contain"
+                />
+              </div>
+            )}
+          </div>
+        </>
+      );
+    }
+    // Skip established-only fields for new businesses
+    if (
+      establishedOnlyFields.includes(fieldName) &&
+      formData.businessStatus !== "established"
+    ) {
+      return null;
+    }
+
+    // Special handling for business status field
+    if (fieldName === "businessStatus") {
+      return (
+        <div key={fieldName} className="mb-6">
+          <label className="block mb-2 font-medium text-gray-700">
+            {fieldLabels[fieldName]}
+          </label>
+          <select
+            name={fieldName}
+            className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={formData[fieldName]}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select your business status</option>
+            <option value="new">New Business</option>
+            <option value="established">Established Business</option>
+          </select>
+        </div>
+      );
+    }
+
     const isTextArea = [
       "productsServices",
       "uniqueFeatures",
       "customerNeed",
       "competition",
       "productionProcess",
+      "currentMarketPresence",
+      "operationalHistory",
+      "historicalFinancials",
     ].includes(fieldName);
 
     return (
@@ -199,6 +368,23 @@ export default function BusinessPlanForm() {
 
   return (
     <div className="w-full max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
+      {status.type && (
+        <div
+          className={`mb-6 p-4 rounded-lg ${
+            status.type === "success"
+              ? "bg-green-100 text-green-700 border border-green-400"
+              : "bg-red-100 text-red-700 border border-red-400"
+          }`}
+        >
+          <p className="text-center">{status.message}</p>
+          {status.type === "success" && (
+            <p className="text-center mt-2 text-sm">
+              You can now close this window or start a new plan.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="mb-8">
         <div className="relative pt-1">
           <div className="flex mb-2 items-center justify-between">
@@ -227,7 +413,9 @@ export default function BusinessPlanForm() {
 
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">
-          {formSteps[currentStep].fields.map(renderField)}
+          {formSteps[currentStep].fields.map((fieldName) => (
+            <div key={fieldName}>{renderField(fieldName)}</div>
+          ))}
         </div>
 
         <div className="mt-8 flex justify-between">
@@ -239,7 +427,7 @@ export default function BusinessPlanForm() {
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
-            disabled={currentStep === 0}
+            disabled={currentStep === 0 || isLoading}
           >
             Previous
           </button>
@@ -252,23 +440,46 @@ export default function BusinessPlanForm() {
               }`}
               disabled={isLoading}
             >
-              {isLoading ? "Generating..." : "Generate Plan"}
+              {isLoading ? (
+                <span className="flex items-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Generating Plan...
+                </span>
+              ) : (
+                "Generate Plan"
+              )}
             </button>
           ) : (
             <button
               type="button"
               onClick={nextStep}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+              disabled={isLoading}
             >
               Next
             </button>
           )}
         </div>
       </form>
-
-      {showModal && (
-        <PlanModal plan={generatedPlan} onClose={() => setShowModal(false)} />
-      )}
     </div>
   );
 }
