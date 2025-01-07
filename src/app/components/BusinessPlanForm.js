@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 const formSteps = [
   {
@@ -292,9 +293,11 @@ export default function BusinessPlanForm() {
             />
             {logoPreview && (
               <div className="mt-2">
-                <img
+                <Image
                   src={logoPreview}
                   alt="Logo preview"
+                  width={200}
+                  height={200}
                   className="max-w-[200px] max-h-[200px] object-contain"
                 />
               </div>

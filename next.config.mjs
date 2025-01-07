@@ -2,6 +2,9 @@
 const nextConfig = {
   output: "standalone",
   reactStrictMode: true,
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./src/app/api/**/*"],
+  },
   async headers() {
     return [
       {
@@ -17,12 +20,6 @@ const nextConfig = {
         ],
       },
     ];
-  },
-  // Ensure API routes are included in the standalone output
-  experimental: {
-    outputFileTracingIncludes: {
-      "/api/**/*": ["./src/app/api/**/*"],
-    },
   },
 };
 
