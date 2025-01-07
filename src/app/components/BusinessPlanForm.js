@@ -195,6 +195,10 @@ export default function BusinessPlanForm() {
       const response = await fetch(`${apiUrl}/generatePlan`, {
         method: "POST",
         body: formDataToSend,
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
       });
 
       const data = await response.json();

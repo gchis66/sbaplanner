@@ -6,13 +6,14 @@ import { sendBusinessPlan } from "../../lib/email";
 import { generatePdf, generateDocx } from "../../lib/documentGenerator";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": process.env.CORS_ORIGIN || "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Origin": "https://sbaplanner.vercel.app",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Credentials": "true",
 };
 
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return new NextResponse(null, { headers: corsHeaders });
 }
 
 const openai = new OpenAI({
@@ -20,6 +21,11 @@ const openai = new OpenAI({
 });
 
 export async function POST(req) {
+  // Handle preflight request
+  if (req.method === "OPTIONS") {
+    return new NextResponse(null, { headers: corsHeaders });
+  }
+
   try {
     // Add CORS headers to the response
     const headers = { ...corsHeaders };
