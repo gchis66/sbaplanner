@@ -8,7 +8,7 @@ import { generatePdf, generateDocx } from "../../lib/documentGenerator";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://sbaplanner.vercel.app",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin",
+  "Access-Control-Allow-Headers": "*",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -23,20 +23,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(req) {
-  // Handle preflight request
-  if (req.method === "OPTIONS") {
-    return new NextResponse(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
-  }
+export async function POST(request) {
+  // Always return CORS headers
+  const headers = { ...corsHeaders };
 
   try {
-    // Add CORS headers to the response
-    const headers = { ...corsHeaders };
-
-    const formData = await req.formData();
+    const formData = await request.formData();
     const userDataString = formData.get("userData");
     const logo = formData.get("logo");
     const userData = JSON.parse(userDataString);
@@ -171,7 +163,10 @@ Please generate a well-structured, professional business plan that:
           plan: generatedPlan,
           emailSent: true,
         },
-        { headers }
+        {
+          status: 200,
+          headers,
+        }
       );
     } catch (error) {
       console.error("Error sending email:", error);
@@ -183,14 +178,22 @@ Please generate a well-structured, professional business plan that:
           emailError:
             "Failed to send email. Please try again or contact support.",
         },
-        { headers }
+        {
+          status: 200,
+          headers,
+        }
       );
     }
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to generate business plan" },
-      { status: 500, headers: corsHeaders }
+      {
+        error: error.message || "Failed to generate business plan",
+      },
+      {
+        status: 500,
+        headers,
+      }
     );
   }
 }

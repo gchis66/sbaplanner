@@ -191,15 +191,15 @@ export default function BusinessPlanForm() {
         formDataToSend.append("logo", logo);
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
-      const response = await fetch(`${apiUrl}/generatePlan`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const response = await fetch(`${apiUrl}/api/generatePlan`, {
         method: "POST",
         body: formDataToSend,
         mode: "cors",
         credentials: "omit",
         headers: {
           Accept: "application/json",
-          Origin: "https://sbaplanner.vercel.app",
+          "Content-Type": "application/json",
         },
       });
 
