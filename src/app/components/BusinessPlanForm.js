@@ -293,11 +293,9 @@ export default function BusinessPlanForm() {
             />
             {logoPreview && (
               <div className="mt-2">
-                <Image
+                <img
                   src={logoPreview}
                   alt="Logo preview"
-                  width={200}
-                  height={200}
                   className="max-w-[200px] max-h-[200px] object-contain"
                 />
               </div>
