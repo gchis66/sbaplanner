@@ -8,12 +8,15 @@ import { generatePdf, generateDocx } from "../../lib/documentGenerator";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://sbaplanner.vercel.app",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Credentials": "true",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin",
+  "Access-Control-Max-Age": "86400",
 };
 
 export async function OPTIONS() {
-  return new NextResponse(null, { headers: corsHeaders });
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
 }
 
 const openai = new OpenAI({
@@ -23,7 +26,10 @@ const openai = new OpenAI({
 export async function POST(req) {
   // Handle preflight request
   if (req.method === "OPTIONS") {
-    return new NextResponse(null, { headers: corsHeaders });
+    return new NextResponse(null, {
+      status: 200,
+      headers: corsHeaders,
+    });
   }
 
   try {

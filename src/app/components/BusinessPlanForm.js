@@ -195,9 +195,11 @@ export default function BusinessPlanForm() {
       const response = await fetch(`${apiUrl}/generatePlan`, {
         method: "POST",
         body: formDataToSend,
-        credentials: "include",
+        mode: "cors",
+        credentials: "omit",
         headers: {
           Accept: "application/json",
+          Origin: "https://sbaplanner.vercel.app",
         },
       });
 
