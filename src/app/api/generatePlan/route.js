@@ -5,12 +5,25 @@ import EmailRecord from "../../models/EmailRecord";
 import { sendBusinessPlan } from "../../lib/email";
 import { generatePdf, generateDocx } from "../../lib/documentGenerator";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": process.env.CORS_ORIGIN || "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(req) {
   try {
+    // Add CORS headers to the response
+    const headers = { ...corsHeaders };
+
     const formData = await req.formData();
     const userDataString = formData.get("userData");
     const logo = formData.get("logo");
@@ -141,25 +154,31 @@ Please generate a well-structured, professional business plan that:
         docxBuffer
       );
 
-      return NextResponse.json({
-        plan: generatedPlan,
-        emailSent: true,
-      });
+      return NextResponse.json(
+        {
+          plan: generatedPlan,
+          emailSent: true,
+        },
+        { headers }
+      );
     } catch (error) {
       console.error("Error sending email:", error);
       // Still return the plan but indicate email failure
-      return NextResponse.json({
-        plan: generatedPlan,
-        emailSent: false,
-        emailError:
-          "Failed to send email. Please try again or contact support.",
-      });
+      return NextResponse.json(
+        {
+          plan: generatedPlan,
+          emailSent: false,
+          emailError:
+            "Failed to send email. Please try again or contact support.",
+        },
+        { headers }
+      );
     }
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to generate business plan" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

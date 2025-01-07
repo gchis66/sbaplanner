@@ -191,7 +191,8 @@ export default function BusinessPlanForm() {
         formDataToSend.append("logo", logo);
       }
 
-      const response = await fetch("/api/generatePlan", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
+      const response = await fetch(`${apiUrl}/generatePlan`, {
         method: "POST",
         body: formDataToSend,
       });
