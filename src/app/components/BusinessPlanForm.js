@@ -200,7 +200,6 @@ export default function BusinessPlanForm() {
         credentials: "omit",
         headers: {
           Accept: "application/json",
-          "Content-Type": "application/json",
         },
       });
 
