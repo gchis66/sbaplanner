@@ -11,16 +11,20 @@ const emailRecordSchema = new mongoose.Schema({
   },
   businessStatus: {
     type: String,
-    enum: ["new", "established"],
     required: true,
-  },
-  sentDate: {
-    type: Date,
-    default: Date.now,
+    enum: ["new", "established"],
   },
   planContent: {
     type: String,
     required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  sentSuccessfully: {
+    type: Boolean,
+    default: false,
   },
 });
 
