@@ -197,34 +197,31 @@ export default function BusinessPlanForm() {
         body: formDataToSend,
       });
 
+      if (!response.ok) {
+        throw new Error("Failed to generate business plan");
+      }
+
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate business plan");
+      if (data.error) {
+        throw new Error(data.error);
       }
 
-      if (data.emailSent) {
-        setStatus({
-          type: "success",
-          message: `Success! Your business plan has been sent to ${formData.email}. Please check your email (including spam folder).`,
-        });
-        // Reset form
-        setFormData({
-          businessStatus: "",
-          businessName: "",
-          // ... reset all other fields
-        });
-        setLogo(null);
-        setLogoPreview("");
-        setCurrentStep(0);
-      } else {
-        setStatus({
-          type: "error",
-          message:
-            data.emailError ||
-            "Failed to send email. Please try again or contact support.",
-        });
-      }
+      setStatus({
+        type: "success",
+        message: `Your business plan has been generated! You will receive the PDF and Word versions at ${formData.email} shortly. Please check your email (including spam folder).`,
+      });
+
+      // Reset form
+      setFormData({
+        businessStatus: "",
+        businessName: "",
+        businessDescription: "",
+        // ... reset all other fields to empty strings
+      });
+      setLogo(null);
+      setLogoPreview("");
+      setCurrentStep(0);
     } catch (error) {
       console.error("Error:", error);
       setStatus({
