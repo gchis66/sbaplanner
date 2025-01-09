@@ -192,15 +192,9 @@ export default function BusinessPlanForm() {
         formDataToSend.append("logo", logo);
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${apiUrl}/api/generatePlan`, {
+      const response = await fetch("/api/generatePlan", {
         method: "POST",
         body: formDataToSend,
-        mode: "cors",
-        credentials: "omit",
-        headers: {
-          Accept: "application/json",
-        },
       });
 
       const data = await response.json();
