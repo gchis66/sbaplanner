@@ -158,6 +158,7 @@ export default function BusinessPlanForm() {
   const [currentStep, setCurrentStep] = useState(0);
   const [status, setStatus] = useState({ type: null, message: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState("");
 
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
@@ -184,13 +185,12 @@ export default function BusinessPlanForm() {
     e.preventDefault();
     setIsLoading(true);
     setStatus({ type: null, message: "" });
+    setGeneratedPlan("");
 
     try {
+      // Step 1: Generate the plan
       const formDataToSend = new FormData();
       formDataToSend.append("userData", JSON.stringify(formData));
-      if (logo) {
-        formDataToSend.append("logo", logo);
-      }
 
       const response = await fetch("/api/generatePlan", {
         method: "POST",
@@ -207,9 +207,30 @@ export default function BusinessPlanForm() {
         throw new Error(data.error);
       }
 
+      setGeneratedPlan(data.plan);
+
+      // Step 2: Send documents
+      const docResponse = await fetch("/api/sendDocuments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          businessName: formData.businessName,
+          email: formData.email,
+          plan: data.plan,
+        }),
+      });
+
+      const docData = await docResponse.json();
+
+      if (!docResponse.ok || !docData.success) {
+        throw new Error(docData.error || "Failed to send documents");
+      }
+
       setStatus({
         type: "success",
-        message: `Your business plan has been generated! You will receive the PDF and Word versions at ${formData.email} shortly. Please check your email (including spam folder).`,
+        message: `Your business plan has been generated! PDF and Word versions will be sent to ${formData.email}. Please check your email (including spam folder).`,
       });
 
       // Reset form
@@ -217,7 +238,38 @@ export default function BusinessPlanForm() {
         businessStatus: "",
         businessName: "",
         businessDescription: "",
-        // ... reset all other fields to empty strings
+        personnel: "",
+        legalStructure: "",
+        yearsInOperation: "",
+        currentRevenue: "",
+        currentEmployees: "",
+        productsServices: "",
+        uniqueFeatures: "",
+        currentMarketPresence: "",
+        targetMarket: "",
+        customerNeed: "",
+        competition: "",
+        marketPosition: "",
+        pricingStrategy: "",
+        salesChannels: "",
+        location: "",
+        productionProcess: "",
+        inventoryFulfillment: "",
+        brandMessage: "",
+        marketingMethods: "",
+        onlinePresence: "",
+        existingCustomerBase: "",
+        regulations: "",
+        operationalHistory: "",
+        shortTermGoals: "",
+        longTermGoals: "",
+        scalabilityPlans: "",
+        initialFunding: "",
+        historicalFinancials: "",
+        fundingPurpose: "",
+        profitabilityTimeline: "",
+        qualityFeedback: "",
+        email: "",
       });
       setLogo(null);
       setLogoPreview("");
@@ -374,109 +426,123 @@ export default function BusinessPlanForm() {
           }`}
         >
           <p className="text-center">{status.message}</p>
-          {status.type === "success" && (
-            <p className="text-center mt-2 text-sm">
-              You can now close this window or start a new plan.
-            </p>
-          )}
         </div>
       )}
 
-      <div className="mb-8">
-        <div className="relative pt-1">
-          <div className="flex mb-2 items-center justify-between">
-            <div>
-              <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
-                Step {currentStep + 1} of {formSteps.length}
-              </span>
-            </div>
-            <div className="text-right">
-              <span className="text-xs font-semibold inline-block text-blue-600">
-                {Math.round(progress)}%
-              </span>
-            </div>
+      {generatedPlan ? (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">
+            Your Generated Business Plan
+          </h2>
+          <div className="whitespace-pre-wrap bg-gray-50 p-6 rounded-lg border">
+            {generatedPlan}
           </div>
-          <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
-            <div
-              style={{ width: `${progress}%` }}
-              className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600 transition-all duration-500"
-            ></div>
-          </div>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800">
-          {formSteps[currentStep].title}
-        </h2>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          {formSteps[currentStep].fields.map((fieldName) => (
-            <div key={fieldName}>{renderField(fieldName)}</div>
-          ))}
-        </div>
-
-        <div className="mt-8 flex justify-between">
           <button
-            type="button"
-            onClick={prevStep}
-            className={`px-6 py-2 rounded-lg font-medium ${
-              currentStep === 0
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-            disabled={currentStep === 0 || isLoading}
+            onClick={() => setGeneratedPlan("")}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
           >
-            Previous
+            Generate Another Plan
           </button>
-
-          {currentStep === formSteps.length - 1 ? (
-            <button
-              type="submit"
-              className={`px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 ${
-                isLoading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Generating Plan...
-                </span>
-              ) : (
-                "Generate Plan"
-              )}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={nextStep}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
-              disabled={isLoading}
-            >
-              Next
-            </button>
-          )}
         </div>
-      </form>
+      ) : (
+        <>
+          <div className="mb-8">
+            <div className="relative pt-1">
+              <div className="flex mb-2 items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
+                    Step {currentStep + 1} of {formSteps.length}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-semibold inline-block text-blue-600">
+                    {Math.round(progress)}%
+                  </span>
+                </div>
+              </div>
+              <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+                <div
+                  style={{ width: `${progress}%` }}
+                  className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600 transition-all duration-500"
+                ></div>
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              {formSteps[currentStep].title}
+            </h2>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-6">
+              {formSteps[currentStep].fields.map((fieldName) => (
+                <div key={fieldName}>{renderField(fieldName)}</div>
+              ))}
+            </div>
+
+            <div className="mt-8 flex justify-between">
+              <button
+                type="button"
+                onClick={prevStep}
+                className={`px-6 py-2 rounded-lg font-medium ${
+                  currentStep === 0
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+                disabled={currentStep === 0 || isLoading}
+              >
+                Previous
+              </button>
+
+              {currentStep === formSteps.length - 1 ? (
+                <button
+                  type="submit"
+                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 ${
+                    isLoading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Generating Plan...
+                    </span>
+                  ) : (
+                    "Generate Plan"
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                  disabled={isLoading}
+                >
+                  Next
+                </button>
+              )}
+            </div>
+          </form>
+        </>
+      )}
     </div>
   );
 }

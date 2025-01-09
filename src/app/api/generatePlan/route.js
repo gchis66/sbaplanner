@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import connectDB from "../../lib/mongodb";
-import EmailRecord from "../../models/EmailRecord";
-import { sendBusinessPlan } from "../../lib/email";
-import { generatePdf, generateDocx } from "../../lib/documentGenerator";
 
 export const runtime = "edge";
 export const maxDuration = 300; // 5 minutes
@@ -32,36 +28,22 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
     const userDataString = formData.get("userData");
-    const logo = formData.get("logo");
     const userData = JSON.parse(userDataString);
 
-    // First, generate the plan with OpenAI
+    // Generate the plan with OpenAI
     const generatedPlan = await generatePlanWithOpenAI(userData);
 
-    // Send an immediate response with the generated plan
-    const stream = new TransformStream();
-    const writer = stream.writable.getWriter();
-    const encoder = new TextEncoder();
-
-    // Write the initial response
-    writer.write(
-      encoder.encode(
-        JSON.stringify({
-          status: "processing",
-          plan: generatedPlan,
-        })
-      )
-    );
-
-    // Process the rest in the background
-    processRemainingTasks(userData, generatedPlan, logo).catch(console.error);
-
-    return new NextResponse(stream.readable, {
-      headers: {
-        ...headers,
-        "Content-Type": "application/json",
+    return NextResponse.json(
+      {
+        success: true,
+        plan: generatedPlan,
+        email: userData.email,
       },
-    });
+      {
+        status: 200,
+        headers,
+      }
+    );
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(
@@ -163,39 +145,4 @@ Please generate a well-structured, professional business plan that:
   });
 
   return completion.choices[0].message.content;
-}
-
-async function processRemainingTasks(userData, generatedPlan, logo) {
-  try {
-    let logoBase64 = null;
-    if (logo) {
-      const buffer = await logo.arrayBuffer();
-      logoBase64 = Buffer.from(buffer).toString("base64");
-    }
-
-    // Generate documents and handle email in parallel
-    const [pdfBuffer, docxBuffer] = await Promise.all([
-      generatePdf(userData.businessName, generatedPlan, logoBase64),
-      generateDocx(userData.businessName, generatedPlan, logoBase64),
-    ]);
-
-    // Connect to MongoDB and store the record
-    await connectDB();
-    await EmailRecord.create({
-      businessName: userData.businessName,
-      recipientEmail: userData.email,
-      businessStatus: userData.businessStatus,
-      planContent: generatedPlan,
-    });
-
-    // Send email
-    await sendBusinessPlan(
-      userData.email,
-      userData.businessName,
-      pdfBuffer,
-      docxBuffer
-    );
-  } catch (error) {
-    console.error("Background task error:", error);
-  }
 }
