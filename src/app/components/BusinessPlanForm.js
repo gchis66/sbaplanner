@@ -188,7 +188,6 @@ export default function BusinessPlanForm() {
     setGeneratedPlan("");
 
     try {
-      // Step 1: Generate the plan
       const formDataToSend = new FormData();
       formDataToSend.append("userData", JSON.stringify(formData));
 
@@ -201,15 +200,21 @@ export default function BusinessPlanForm() {
         throw new Error("Failed to generate business plan");
       }
 
-      const data = await response.json();
+      // Handle streaming response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let plan = "";
 
-      if (data.error) {
-        throw new Error(data.error);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        plan += chunk;
+        setGeneratedPlan(plan); // Update UI with each chunk
       }
 
-      setGeneratedPlan(data.plan);
-
-      // Step 2: Send documents
+      // After plan is generated, send documents
       const docResponse = await fetch("/api/sendDocuments", {
         method: "POST",
         headers: {
@@ -218,7 +223,7 @@ export default function BusinessPlanForm() {
         body: JSON.stringify({
           businessName: formData.businessName,
           email: formData.email,
-          plan: data.plan,
+          plan: plan,
         }),
       });
 

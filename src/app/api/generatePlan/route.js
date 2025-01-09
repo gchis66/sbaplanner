@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
 export const runtime = "edge";
-export const maxDuration = 300; // 5 minutes
+export const maxDuration = 300; // Keep at 5 minutes
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,20 +30,54 @@ export async function POST(request) {
     const userDataString = formData.get("userData");
     const userData = JSON.parse(userDataString);
 
-    // Generate the plan with OpenAI
-    const generatedPlan = await generatePlanWithOpenAI(userData);
+    // Create a TransformStream for streaming the response
+    const stream = new TransformStream();
+    const writer = stream.writable.getWriter();
+    const encoder = new TextEncoder();
 
-    return NextResponse.json(
-      {
-        success: true,
-        plan: generatedPlan,
-        email: userData.email,
-      },
-      {
-        status: 200,
-        headers,
+    // Start the OpenAI stream
+    const completion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an expert business plan writer with extensive knowledge of SBA requirements and business planning best practices. Generate a well-structured plan with clear section headings and professional formatting.",
+        },
+        {
+          role: "user",
+          content: generatePrompt(userData),
+        },
+      ],
+      model: "gpt-4",
+      temperature: 0.7,
+      max_tokens: 4000,
+      stream: true,
+    });
+
+    let fullPlan = "";
+
+    // Process the stream
+    (async () => {
+      try {
+        for await (const chunk of completion) {
+          const content = chunk.choices[0]?.delta?.content || "";
+          fullPlan += content;
+          // Write each chunk to the stream
+          await writer.write(encoder.encode(content));
+        }
+      } catch (error) {
+        console.error("Streaming error:", error);
+      } finally {
+        await writer.close();
       }
-    );
+    })();
+
+    return new Response(stream.readable, {
+      headers: {
+        ...headers,
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(
@@ -53,7 +87,7 @@ export async function POST(request) {
   }
 }
 
-async function generatePlanWithOpenAI(userData) {
+function generatePrompt(userData) {
   const isEstablished = userData.businessStatus === "established";
 
   // Create a business context based on business status
@@ -74,7 +108,7 @@ async function generatePlanWithOpenAI(userData) {
     ? `Historical Performance: ${userData.historicalFinancials}\nFunding Requirements: ${userData.initialFunding}\nFunding Purpose: ${userData.fundingPurpose}\nProjected Timeline: ${userData.profitabilityTimeline}`
     : `Initial Funding Requirements: ${userData.initialFunding}\nProjected Timeline: ${userData.profitabilityTimeline}`;
 
-  const prompt = `Generate a comprehensive SBA-ready business plan for ${businessContext} with the following information:
+  return `Generate a comprehensive SBA-ready business plan for ${businessContext} with the following information:
 
 Business Overview:
 Company Name: ${userData.businessName}
@@ -126,23 +160,4 @@ Please generate a well-structured, professional business plan that:
   }
 5. Maintains a professional and confident tone
 6. Includes an executive summary at the beginning`;
-
-  const completion = await openai.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are an expert business plan writer with extensive knowledge of SBA requirements and business planning best practices. Generate a well-structured plan with clear section headings and professional formatting.",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    model: "gpt-4",
-    temperature: 0.7,
-    max_tokens: 4000,
-  });
-
-  return completion.choices[0].message.content;
 }
