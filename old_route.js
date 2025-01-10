@@ -1,29 +1,21 @@
-import { NextResponse } from "next/server";
 import OpenAI from "openai";
-
-export const runtime = "edge";
-export const maxDuration = 300; // Keep at 5 minutes
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "*",
-  "Access-Control-Max-Age": "86400",
-};
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: corsHeaders,
-  });
-}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// System prompts and guidelines for comprehensive business plan generation
-const systemPrompt = `You are an expert business consultant specializing in preparing SBA-ready business plans and financial projections. Your expertise includes market analysis, financial modeling, competitive analysis, and strategic planning. Approach each business plan with attention to detail, realistic projections, and actionable strategies. Use specific industry knowledge and current market trends to enhance the plans.
+export async function POST(req) {
+  try {
+    const body = await req.json();
+    const { userData } = body;
+
+    // Add validation
+    if (!userData) {
+      return Response.json({ error: "No user data provided" }, { status: 400 });
+    }
+
+    // System prompts
+    const systemPrompt = `You are an expert business consultant specializing in preparing SBA-ready business plans and financial projections. Your expertise includes market analysis, financial modeling, competitive analysis, and strategic planning. Approach each business plan with attention to detail, realistic projections, and actionable strategies. Use specific industry knowledge and current market trends to enhance the plans.
 
 Key Responsibilities:
 - Create comprehensive, actionable business plans
@@ -33,44 +25,15 @@ Key Responsibilities:
 - Provide detailed implementation strategies
 - Assess and address potential risks`;
 
-const evaluationGuidelines = `When creating business plans, ensure:
+    const exampleContext = `The following examples demonstrate successful business plans. Pay attention to their structure, depth of analysis, and professional tone. When creating new plans:
+- Maintain consistent level of detail while adapting to specific industry
+- Follow similar section organization but customize content
+- Use similar depth of financial analysis
+- Mirror the professional language and presentation
+- Adapt market analysis to current conditions
+`;
 
-FINANCIAL PROJECTIONS
-- All projections are realistic and well-justified
-- Include detailed assumptions behind numbers
-- Provide monthly projections for year 1
-- Include quarterly projections for years 2-3
-- Show clear break-even analysis
-
-MARKET ANALYSIS
-- Include current industry trends and data
-- Provide specific market size figures
-- Detail target market segments
-- Analyze direct and indirect competition
-- Include market penetration strategy
-
-OPERATIONAL DETAILS
-- Specific implementation timelines
-- Detailed resource requirements
-- Clear organizational structure
-- Quality control processes
-- Supply chain management
-
-RISK MANAGEMENT
-- Identify key business risks
-- Provide mitigation strategies
-- Include contingency plans
-- Address market uncertainties
-- Consider regulatory compliance
-
-METRICS & MILESTONES
-- Define specific success metrics
-- Set clear milestone dates
-- Include progress tracking methods
-- Establish review periods
-- Detail growth indicators`;
-
-const examplePlans = `
+    const examples = `
 EXAMPLE BUSINESS PLAN 1:
 Wooden Grain Toy Company
 Business Plan
@@ -253,21 +216,179 @@ Currently, the only person in charge of sales for We Can Do It Consulting is the
 
 `;
 
-export async function POST(request) {
-  const headers = { ...corsHeaders };
+    const evaluationGuidelines = `When creating business plans, ensure:
 
-  try {
-    const formData = await request.formData();
-    const userDataString = formData.get("userData");
-    const userData = JSON.parse(userDataString);
+FINANCIAL PROJECTIONS
+- All projections are realistic and well-justified
+- Include detailed assumptions behind numbers
+- Provide monthly projections for year 1
+- Include quarterly projections for years 2-3
+- Show clear break-even analysis
 
-    // Create a TransformStream for streaming the response
-    const stream = new TransformStream();
-    const writer = stream.writable.getWriter();
-    const encoder = new TextEncoder();
+MARKET ANALYSIS
+- Include current industry trends and data
+- Provide specific market size figures
+- Detail target market segments
+- Analyze direct and indirect competition
+- Include market penetration strategy
 
-    // Start the OpenAI stream with enhanced prompts
+OPERATIONAL DETAILS
+- Specific implementation timelines
+- Detailed resource requirements
+- Clear organizational structure
+- Quality control processes
+- Supply chain management
+
+RISK MANAGEMENT
+- Identify key business risks
+- Provide mitigation strategies
+- Include contingency plans
+- Address market uncertainties
+- Consider regulatory compliance
+
+METRICS & MILESTONES
+- Define specific success metrics
+- Set clear milestone dates
+- Include progress tracking methods
+- Establish review periods
+- Detail growth indicators`;
+
+    const enhancedUserContent = `
+Based on the provided business information, create a comprehensive SBA-ready business plan that includes:
+
+1. EXECUTIVE SUMMARY
+- Business overview and vision
+- Value proposition
+- Key success factors
+- Financial highlights and projections
+- Implementation timeline
+- Management team qualifications
+- Funding requirements and use of funds
+
+2. COMPANY DESCRIPTION
+- Detailed business model
+- Organizational structure
+- Core competencies
+- Company culture and values
+- Legal structure and ownership
+- Business location and facilities
+- Operating hours and seasons
+- Insurance and liability management
+
+3. MARKET ANALYSIS
+- Industry overview and trends
+- Total market size and growth potential
+- Target market segmentation and size
+- Customer demographics and psychographics
+- Competitive landscape analysis
+- Direct and indirect competitors
+- SWOT analysis
+- Market share projections
+- Entry barriers and regulations
+- Industry success factors
+
+4. PRODUCT/SERVICE LINE
+- Detailed product/service descriptions
+- Features and benefits
+- Competitive advantages
+- Development status
+- Intellectual property status
+- R&D activities
+- Future product/service roadmap
+- Production process
+- Quality control measures
+- Suppliers and vendors
+- Cost structure
+
+5. MARKETING AND SALES STRATEGY
+- Positioning strategy
+- Pricing strategy and model
+- Distribution channels
+- Sales process and cycle
+- Customer acquisition strategy
+- Marketing channels and tactics
+- Marketing budget allocation
+- Customer retention strategies
+- Partnership opportunities
+- Brand development
+- Digital presence strategy
+
+6. OPERATIONAL PLAN
+- Day-to-day operations
+- Production/service delivery process
+- Facility requirements and layout
+- Equipment and technology needs
+- Supply chain management
+- Inventory management
+- Quality control procedures
+- Customer service approach
+- Key partnerships and relationships
+- Staffing and training plans
+
+7. FINANCIAL PROJECTIONS
+- Startup costs breakdown
+- 3-year financial forecasts
+- Monthly cash flow projections
+- Break-even analysis
+- Income statements
+- Balance sheets
+- Key financial metrics
+- Funding requirements
+- Use of funds
+- Exit strategy
+
+8. RISK ANALYSIS
+- Market risks
+- Operational risks
+- Financial risks
+- Competitive risks
+- Regulatory risks
+- Technology risks
+- Mitigation strategies
+- Contingency plans
+- Insurance coverage
+- Emergency procedures
+
+Business Details:
+Business Name: ${userData.businessName || "N/A"}
+Business Description: ${userData.businessDescription || "N/A"}
+Principal Members & Roles: ${userData.personnel || "N/A"}
+Legal Structure: ${userData.legalStructure || "N/A"}
+Products/Services: ${userData.productsServices || "N/A"}
+Unique Features: ${userData.uniqueFeatures || "N/A"}
+Target Market: ${userData.targetMarket || "N/A"}
+Customer Need: ${userData.customerNeed || "N/A"}
+Competition: ${userData.competition || "N/A"}
+Pricing Strategy: ${userData.pricingStrategy || "N/A"}
+Sales Channels: ${userData.salesChannels || "N/A"}
+Location & Facilities: ${userData.location || "N/A"}
+Production Process: ${userData.productionProcess || "N/A"}
+Inventory & Fulfillment: ${userData.inventoryFulfillment || "N/A"}
+Brand Message: ${userData.brandMessage || "N/A"}
+Marketing Methods: ${userData.marketingMethods || "N/A"}
+Online Presence: ${userData.onlinePresence || "N/A"}
+Regulations: ${userData.regulations || "N/A"}
+Short-Term Goals: ${userData.shortTermGoals || "N/A"}
+Long-Term Goals: ${userData.longTermGoals || "N/A"}
+Scalability & Expansion: ${userData.scalabilityPlans || "N/A"}
+Initial Funding: ${userData.initialFunding || "N/A"}
+Profitability Timeline: ${userData.profitabilityTimeline || "N/A"}
+Quality Assurance & Feedback: ${userData.qualityFeedback || "N/A"}
+
+Additional Requirements:
+- Use current industry benchmarks and metrics
+- Provide detailed implementation timelines
+- Include specific, measurable goals
+- Address potential challenges and solutions
+- Include contingency plans
+- Ensure all projections are realistic and well-supported
+- Include relevant industry regulations and compliance requirements
+- Detail specific marketing and sales strategies
+- Outline clear operational procedures
+- Provide specific financial assumptions`;
+
     const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -275,203 +396,96 @@ export async function POST(request) {
         },
         {
           role: "system",
+          content: exampleContext,
+        },
+        {
+          role: "system",
           content: evaluationGuidelines,
         },
         {
           role: "system",
-          content: examplePlans,
+          content: examples,
         },
         {
           role: "user",
-          content: generatePrompt(userData),
+          content: enhancedUserContent,
         },
       ],
-      model: "gpt-4",
-      temperature: 0.7,
-      max_tokens: 8000, // Increased for more comprehensive output
-      stream: true,
+      functions: [
+        {
+          name: "generate_business_plan",
+          description:
+            "Generate a structured business plan with specific sections",
+          parameters: {
+            type: "object",
+            properties: {
+              executive_summary: { type: "string" },
+              company_description: { type: "string" },
+              market_analysis: { type: "string" },
+              product_service_line: { type: "string" },
+              marketing_sales: { type: "string" },
+              operations: { type: "string" },
+              financial_projections: { type: "string" },
+              risk_analysis: { type: "string" },
+            },
+            required: [
+              "executive_summary",
+              "company_description",
+              "market_analysis",
+              "product_service_line",
+              "marketing_sales",
+              "operations",
+              "financial_projections",
+              "risk_analysis",
+            ],
+          },
+        },
+      ],
+      function_call: { name: "generate_business_plan" },
+      max_tokens: 10000,
+      temperature: 0.5,
+      presence_penalty: 0.1,
+      frequency_penalty: 0.1,
     });
 
-    let fullPlan = "";
+    // Since we're using function calling, we need to parse the function response
+    const functionResponse = JSON.parse(
+      completion.choices[0].message.function_call.arguments
+    );
 
-    // Process the stream
-    (async () => {
-      try {
-        for await (const chunk of completion) {
-          const content = chunk.choices[0]?.delta?.content || "";
-          fullPlan += content;
-          // Write each chunk to the stream
-          await writer.write(encoder.encode(content));
-        }
-      } catch (error) {
-        console.error("Streaming error:", error);
-      } finally {
-        await writer.close();
-      }
-    })();
+    // Format the plan sections into a single string
+    const plan = `
+EXECUTIVE SUMMARY
+${functionResponse.executive_summary}
 
-    return new Response(stream.readable, {
-      headers: {
-        ...headers,
-        "Content-Type": "text/plain; charset=utf-8",
-      },
-    });
+COMPANY DESCRIPTION
+${functionResponse.company_description}
+
+MARKET ANALYSIS
+${functionResponse.market_analysis}
+
+PRODUCT/SERVICE LINE
+${functionResponse.product_service_line}
+
+MARKETING & SALES
+${functionResponse.marketing_sales}
+
+OPERATIONS
+${functionResponse.operations}
+
+FINANCIAL PROJECTIONS
+${functionResponse.financial_projections}
+
+RISK ANALYSIS
+${functionResponse.risk_analysis}
+    `.trim();
+
+    return Response.json({ plan });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: error.message || "An error occurred" },
-      { status: 500, headers }
+    console.error("API Error:", error);
+    return Response.json(
+      { error: "Error generating business plan: " + error.message },
+      { status: 500 }
     );
   }
-}
-
-function generatePrompt(userData) {
-  const isEstablished = userData.businessStatus === "established";
-
-  // Create a business context based on business status
-  const businessContext = isEstablished
-    ? `an established business with ${userData.yearsInOperation} years of operation, current annual revenue of ${userData.currentRevenue}, and ${userData.currentEmployees} employees`
-    : "a new business venture";
-
-  // Enhanced section prompts based on business status
-  const marketAnalysisPrompt = isEstablished
-    ? `Current Market Position: ${userData.marketPosition}
-Existing Customer Base: ${userData.existingCustomerBase}
-Market Analysis:
-- Detailed analysis of ${userData.targetMarket}
-- Customer need addressed: ${userData.customerNeed}
-- Competition analysis: ${userData.competition}
-- Market size and growth potential
-- Industry trends and dynamics
-- Regulatory environment impact
-- Market entry barriers
-- Competitive advantages and positioning`
-    : `Market Analysis:
-- Detailed analysis of ${userData.targetMarket}
-- Customer need addressed: ${userData.customerNeed}
-- Competition analysis: ${userData.competition}
-- Market size and growth potential
-- Industry trends and dynamics
-- Regulatory environment impact
-- Market entry barriers
-- Competitive advantages and positioning`;
-
-  const operationsPrompt = isEstablished
-    ? `Current Operations:
-- Operational History: ${userData.operationalHistory}
-- Location & Facilities: ${userData.location}
-- Production/Service Process: ${userData.productionProcess}
-- Inventory & Fulfillment: ${userData.inventoryFulfillment}
-- Quality control measures
-- Supply chain management
-- Technology infrastructure
-- Operational efficiency metrics
-- Capacity utilization
-- Resource allocation strategy`
-    : `Proposed Operations:
-- Location & Facilities: ${userData.location}
-- Production/Service Process: ${userData.productionProcess}
-- Inventory & Fulfillment: ${userData.inventoryFulfillment}
-- Quality control measures
-- Supply chain management
-- Technology infrastructure
-- Operational efficiency metrics
-- Capacity planning
-- Resource allocation strategy`;
-
-  const financialsPrompt = isEstablished
-    ? `Financial Analysis:
-- Historical Performance: ${userData.historicalFinancials}
-- Funding Requirements: ${userData.initialFunding}
-- Funding Purpose: ${userData.fundingPurpose}
-- Projected Timeline: ${userData.profitabilityTimeline}
-- Detailed financial projections (3-5 years)
-- Break-even analysis
-- Cash flow projections
-- Key financial metrics
-- Investment return analysis
-- Risk assessment and mitigation`
-    : `Financial Analysis:
-- Initial Funding Requirements: ${userData.initialFunding}
-- Projected Timeline: ${userData.profitabilityTimeline}
-- Detailed financial projections (3-5 years)
-- Break-even analysis
-- Cash flow projections
-- Key financial metrics
-- Investment return analysis
-- Risk assessment and mitigation`;
-
-  return `Generate a comprehensive SBA-ready business plan for ${businessContext} with the following information:
-
-EXECUTIVE SUMMARY
-[Provide a compelling overview that captures the essence of the business opportunity, highlighting key strengths, market potential, and financial projections]
-
-BUSINESS OVERVIEW:
-Company Name: ${userData.businessName}
-Description: ${userData.businessDescription}
-Legal Structure: ${userData.legalStructure}
-Key Personnel: ${userData.personnel}
-[Include management team qualifications and roles]
-
-PRODUCTS & SERVICES:
-${userData.productsServices}
-Unique Value Proposition: ${userData.uniqueFeatures}
-${
-  isEstablished
-    ? `Current Market Presence: ${userData.currentMarketPresence}`
-    : ""
-}
-[Include detailed product/service descriptions, development status, and intellectual property]
-
-${marketAnalysisPrompt}
-
-MARKETING & SALES STRATEGY:
-Pricing Strategy: ${userData.pricingStrategy}
-Sales Channels: ${userData.salesChannels}
-Brand Message: ${userData.brandMessage}
-Marketing Methods: ${userData.marketingMethods}
-Online Presence: ${userData.onlinePresence}
-[Include detailed marketing plan, customer acquisition strategy, and sales process]
-
-${operationsPrompt}
-
-REGULATORY COMPLIANCE:
-${userData.regulations}
-[Include detailed compliance requirements and mitigation strategies]
-
-GROWTH STRATEGY:
-Short-term Goals (12 months): ${userData.shortTermGoals}
-Long-term Goals (2-5 years): ${userData.longTermGoals}
-Scalability Plans: ${userData.scalabilityPlans}
-[Include detailed implementation timeline and resource requirements]
-
-${financialsPrompt}
-
-QUALITY CONTROL & FEEDBACK:
-${userData.qualityFeedback}
-[Include quality assurance processes and customer feedback mechanisms]
-
-RISK ANALYSIS:
-[Provide comprehensive analysis of:
-- Market risks and mitigation strategies
-- Operational risks and contingency plans
-- Financial risks and management approach
-- Competitive risks and defensive strategies
-- Regulatory risks and compliance measures]
-
-Please generate a comprehensive, SBA-ready business plan that:
-1. Follows SBA guidelines and formatting requirements
-2. Includes all necessary sections with detailed analysis
-3. Provides comprehensive financial projections and analysis
-4. ${
-    isEstablished
-      ? "Emphasizes growth potential, historical success, and future opportunities"
-      : "Emphasizes market opportunity, execution strategy, and growth potential"
-  }
-5. Maintains a professional and confident tone
-6. Includes specific, actionable implementation strategies
-7. Provides detailed risk analysis and mitigation plans
-8. Incorporates industry-specific metrics and benchmarks
-9. Demonstrates clear understanding of market dynamics and competition
-10. Shows realistic and well-supported financial projections`;
 }

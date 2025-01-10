@@ -45,12 +45,12 @@ SBA Planner Team
       text: emailContent,
       attachments: [
         {
-          filename: `${sanitizedBusinessName}_business_plan.pdf`,
+          filename: `${sanitizedBusinessName}_sba_business_plan.pdf`,
           content: pdfContent,
           contentType: "application/pdf",
         },
         {
-          filename: `${sanitizedBusinessName}_business_plan.docx`,
+          filename: `${sanitizedBusinessName}_sba_business_plan.docx`,
           content: docxContent,
           contentType:
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
