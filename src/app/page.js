@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BusinessPlanForm from "./components/BusinessPlanForm";
 import Logo from "./components/Logo";
 
 export default function Home() {
   const [showForm, setShowForm] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null; // Prevents hydration issues
+  }
 
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
