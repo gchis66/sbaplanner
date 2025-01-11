@@ -10,13 +10,6 @@ import {
   Footer,
   LineRuleType,
   ImageRun,
-  Table,
-  TableRow,
-  TableCell,
-  BorderStyle,
-  WidthType,
-  TableLayoutType,
-  ShadingType,
 } from "docx";
 import { jsPDF } from "jspdf";
 import { Packer } from "docx";
@@ -37,6 +30,7 @@ function convertContentToSections(content) {
 
 export async function generateDocx(businessName, content, logoBase64) {
   const sections = convertContentToSections(content);
+
   const children = [];
 
   // Add logo if provided
@@ -51,7 +45,7 @@ export async function generateDocx(businessName, content, logoBase64) {
                 "base64"
               ),
               transformation: {
-                width: 150,
+                width: 100,
                 height: 100,
               },
             }),
@@ -64,138 +58,38 @@ export async function generateDocx(businessName, content, logoBase64) {
       );
     } catch (error) {
       console.error("Error adding logo to DOCX:", error);
+      // Continue without the logo if there's an error
     }
   }
 
-  // Add title
+  // Add title and content
   children.push(
     new Paragraph({
-      children: [
-        new TextRun({
-          text: businessName.toUpperCase(),
-          size: 36,
-          bold: true,
-          color: "000000",
-        }),
-        new TextRun({
-          text: "\nBUSINESS PLAN",
-          size: 32,
-          bold: true,
-          color: "000000",
-          break: 1,
-        }),
-      ],
+      text: businessName,
+      heading: HeadingLevel.TITLE,
       alignment: AlignmentType.CENTER,
       spacing: {
         after: 400,
-        line: 360,
       },
-    })
-  );
-
-  // Add date
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: new Date().toLocaleDateString("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          }),
-          size: 24,
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: {
-        after: 800,
-      },
-    })
-  );
-
-  // Add sections with enhanced formatting
-  sections.forEach((section) => {
-    // Add section heading
-    children.push(
+    }),
+    ...sections.flatMap((section) => [
       new Paragraph({
-        children: [
-          new TextRun({
-            text: section.title.toUpperCase(),
-            size: 28,
-            bold: true,
-            color: "000000",
-          }),
-        ],
+        text: section.title,
         heading: HeadingLevel.HEADING_1,
         spacing: {
           before: 400,
           after: 200,
         },
-        pageBreakBefore: true,
-      })
-    );
-
-    // Add horizontal line after heading
-    children.push(
+      }),
       new Paragraph({
-        children: [
-          new TextRun({
-            text: "_______________________________________________________________",
-            size: 24,
-            color: "808080",
-          }),
-        ],
+        text: section.content,
         spacing: {
-          before: 100,
+          before: 200,
           after: 400,
         },
-      })
-    );
-
-    // Process content and add with proper formatting
-    const contentParagraphs = section.content.split("\n").map((line) => {
-      if (line.trim().startsWith("-")) {
-        // Format bullet points
-        return new Paragraph({
-          children: [
-            new TextRun({
-              text: "•",
-              size: 24,
-            }),
-            new TextRun({
-              text: line.replace("-", "").trim(),
-              size: 24,
-            }),
-          ],
-          indent: {
-            left: 720, // 0.5 inch
-          },
-          spacing: {
-            before: 120,
-            after: 120,
-            line: 360,
-          },
-        });
-      } else {
-        // Regular paragraph
-        return new Paragraph({
-          children: [
-            new TextRun({
-              text: line,
-              size: 24,
-            }),
-          ],
-          spacing: {
-            before: 120,
-            after: 120,
-            line: 360,
-          },
-        });
-      }
-    });
-
-    children.push(...contentParagraphs);
-  });
+      }),
+    ])
+  );
 
   const doc = new Document({
     styles: {
@@ -205,14 +99,14 @@ export async function generateDocx(businessName, content, logoBase64) {
           name: "Normal",
           quickFormat: true,
           run: {
-            size: 24,
+            size: 24, // 12pt
             font: "Calibri",
           },
           paragraph: {
             spacing: {
-              line: 360,
-              before: 240,
-              after: 240,
+              line: 360, // 1.5 line spacing
+              before: 240, // 12pt before
+              after: 240, // 12pt after
             },
           },
         },
@@ -223,7 +117,7 @@ export async function generateDocx(businessName, content, logoBase64) {
         properties: {
           page: {
             margin: {
-              top: 1440,
+              top: 1440, // 1 inch
               right: 1440,
               bottom: 1440,
               left: 1440,
@@ -238,45 +132,14 @@ export async function generateDocx(businessName, content, logoBase64) {
                   new TextRun({
                     text: businessName,
                     bold: true,
-                    size: 20,
                   }),
                   new TextRun({
-                    text: "\t\tBusiness Plan",
-                    size: 20,
+                    text: "\t\t",
                   }),
                   new TextRun({
-                    text: "\t\tPage ",
-                    size: 20,
-                  }),
-                  new TextRun({
-                    children: [PageNumber.CURRENT],
-                    size: 20,
-                  }),
-                  new TextRun({
-                    text: " of ",
-                    size: 20,
-                  }),
-                  new TextRun({
-                    children: [PageNumber.TOTAL_PAGES],
-                    size: 20,
+                    children: ["Page ", PageNumber.CURRENT],
                   }),
                 ],
-              }),
-            ],
-          }),
-        },
-        footers: {
-          default: new Footer({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "CONFIDENTIAL",
-                    size: 16,
-                    bold: true,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
               }),
             ],
           }),
@@ -297,124 +160,75 @@ export async function generateDocx(businessName, content, logoBase64) {
 
 export async function generatePdf(businessName, content, logoBase64) {
   const sections = convertContentToSections(content);
-  const doc = new jsPDF({
-    orientation: "portrait",
-    unit: "pt",
-    format: "letter",
-  });
-
-  // Set initial position and constants
-  let yPosition = 40;
+  const doc = new jsPDF();
+  let yPosition = 20;
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 50;
+  const margin = 20;
   const contentWidth = pageWidth - 2 * margin;
 
   // Add logo if provided
   if (logoBase64) {
     try {
+      // Remove the data:image/png;base64, prefix if it exists
       const base64Data = logoBase64.replace(/^data:image\/\w+;base64,/, "");
-      const imgWidth = 150;
-      const imgHeight = 100;
+      const imgWidth = 40;
+      const imgHeight = 40;
       const imgX = (pageWidth - imgWidth) / 2;
       doc.addImage(base64Data, "PNG", imgX, yPosition, imgWidth, imgHeight);
-      yPosition += imgHeight + 20;
+      yPosition += imgHeight + 10;
     } catch (error) {
       console.error("Error adding logo to PDF:", error);
+      // Continue without the logo if there's an error
     }
   }
 
   // Add title
-  doc.setFont("helvetica", "bold");
   doc.setFontSize(24);
-  doc.text(businessName.toUpperCase(), pageWidth / 2, yPosition, {
-    align: "center",
-  });
-  yPosition += 30;
+  doc.text(businessName, pageWidth / 2, yPosition, { align: "center" });
+  yPosition += 20;
 
-  doc.setFontSize(20);
-  doc.text("BUSINESS PLAN", pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 30;
-
-  // Add date
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  const date = new Date().toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-  doc.text(date, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 40;
-
-  // Process sections
+  // Add sections
   sections.forEach((section) => {
-    // Add page break for each section
-    doc.addPage();
-    yPosition = 50;
+    // Check if we need a new page
+    if (yPosition > doc.internal.pageSize.getHeight() - 20) {
+      doc.addPage();
+      yPosition = 20;
+    }
 
-    // Add header
-    doc.setFont("helvetica", "bold");
+    // Add section title
     doc.setFontSize(16);
-    doc.text(section.title.toUpperCase(), margin, yPosition);
-    yPosition += 20;
+    doc.setFont(undefined, "bold");
+    doc.text(section.title, margin, yPosition);
+    yPosition += 10;
 
-    // Add horizontal line
-    doc.setDrawColor(128, 128, 128);
-    doc.line(margin, yPosition, pageWidth - margin, yPosition);
-    yPosition += 30;
-
-    // Process content
-    doc.setFont("helvetica", "normal");
+    // Add section content
     doc.setFontSize(12);
-    const lines = section.content.split("\n");
+    doc.setFont(undefined, "normal");
 
-    lines.forEach((line) => {
-      // Check if we need a new page
-      if (yPosition > pageHeight - 50) {
-        doc.addPage();
-        yPosition = 50;
-      }
+    // Split content into lines that fit the page width
+    const lines = doc.splitTextToSize(section.content, contentWidth);
 
-      if (line.trim().startsWith("-")) {
-        // Bullet point
-        const bulletText = "•" + line.replace("-", "").trim();
-        const wrappedText = doc.splitTextToSize(bulletText, contentWidth - 20);
-        wrappedText.forEach((textLine) => {
-          doc.text(textLine, margin + 20, yPosition);
-          yPosition += 20;
-        });
-      } else {
-        // Regular text
-        const wrappedText = doc.splitTextToSize(line, contentWidth);
-        wrappedText.forEach((textLine) => {
-          doc.text(textLine, margin, yPosition);
-          yPosition += 20;
-        });
-      }
-    });
+    // Check if we need a new page for the content
+    if (yPosition + lines.length * 7 > doc.internal.pageSize.getHeight() - 20) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    doc.text(lines, margin, yPosition);
+    yPosition += lines.length * 7 + 10;
   });
 
-  // Add page numbers and headers to all pages
+  // Add page numbers
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-
-    // Header
-    doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.text(businessName, margin, 20);
-    doc.setFont("helvetica", "normal");
-    doc.text("Business Plan", pageWidth / 2, 20, { align: "center" });
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, 20, {
-      align: "right",
-    });
-
-    // Footer
-    doc.setFont("helvetica", "bold");
-    doc.text("CONFIDENTIAL", pageWidth / 2, pageHeight - 20, {
-      align: "center",
-    });
+    doc.text(
+      `${businessName} - Page ${i} of ${pageCount}`,
+      pageWidth - margin,
+      doc.internal.pageSize.getHeight() - 10,
+      { align: "right" }
+    );
   }
 
   return doc.output("arraybuffer");

@@ -22,237 +22,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// System prompts and guidelines for comprehensive business plan generation
-const systemPrompt = `You are an expert business consultant specializing in preparing SBA-ready business plans and financial projections. Your expertise includes market analysis, financial modeling, competitive analysis, and strategic planning. Approach each business plan with attention to detail, realistic projections, and actionable strategies. Use specific industry knowledge and current market trends to enhance the plans.
-
-Key Responsibilities:
-- Create comprehensive, actionable business plans
-- Develop realistic financial projections
-- Analyze market conditions and competition
-- Identify key success metrics and milestones
-- Provide detailed implementation strategies
-- Assess and address potential risks`;
-
-const evaluationGuidelines = `When creating business plans, ensure:
-
-FINANCIAL PROJECTIONS
-- All projections are realistic and well-justified
-- Include detailed assumptions behind numbers
-- Provide monthly projections for year 1
-- Include quarterly projections for years 2-3
-- Show clear break-even analysis
-
-MARKET ANALYSIS
-- Include current industry trends and data
-- Provide specific market size figures
-- Detail target market segments
-- Analyze direct and indirect competition
-- Include market penetration strategy
-
-OPERATIONAL DETAILS
-- Specific implementation timelines
-- Detailed resource requirements
-- Clear organizational structure
-- Quality control processes
-- Supply chain management
-
-RISK MANAGEMENT
-- Identify key business risks
-- Provide mitigation strategies
-- Include contingency plans
-- Address market uncertainties
-- Consider regulatory compliance
-
-METRICS & MILESTONES
-- Define specific success metrics
-- Set clear milestone dates
-- Include progress tracking methods
-- Establish review periods
-- Detail growth indicators`;
-
-const examplePlans = `
-EXAMPLE BUSINESS PLAN 1:
-Wooden Grain Toy Company
-Business Plan
-
-Andrew Robertson, Owner
-Created on December 29, 2016
-
-Executive Summary
-Product
-Wooden Grain Toys manufactures high-quality toys for children aged 3-10. All toys are made from solid hardwoods including maple, beech, birch, cherry, and oak. The toys are built to be long lasting with sufficient moving parts to engage each child’s interest, but not limit his or her imagination. 
-Customers
-The target audience for Wooden Grain Toys is adults, specifically parents and grandparents who wish to give their children or grandchildren the opportunity to play with a toy that is not only durable and aesthetically pleasing, but also foster the child’s creativity.
-Future of the Company
-Although the toy manufacturing business is highly competitive, we believe that there is a place for high-quality, attractive, durable, and affordable toys. Our goal is to build and market toys that will entertain children and stand the test of time.
-
-Company Description
-Mission Statement
-To build and sell high-quality toys that will be cherished and handed down from generation to generation.
-Principal Members
-Andrew Robertson — owner, designer and primary builder
-Jane Robertson — business manager/bookkeeper
-Bill Williams and Houlin Lee — builders, assemblers, and painters
-Mickey Soukarin — web master and handles shipping for web, mail, and special orders
-Legal Structure
-Wooden Grain Toys is a sole proprietorship.
-Market Research
-Industry
-Built-Rite Toys will be a part of the toy manufacturing industry. Currently, wooden toys are considered a niche market, comprised of different sized companies. The largest companies, such as Plastique Toys and Metal Happy Toys, have large inventories of products that are offered internationally. The smallest companies sell locally either in shops, at craft fairs, or online.
-This industry is currently suffering from the economic recession as consumers are spending less on non-essentials. However, industry revenues increased by $1.2 million in the 2nd quarter of 2012. This means there is a potential for growth as the economy recovers.
-Detailed Description of Customers
-The two groups that the company plans to market to are parents (age 18-30) of young children and grandparents (age 60-75) of young children with an income range of $35,000 - $80,000 a year. Our target customers are interested in giving durable, well-made toys to their children and grandchildren to help foster creativity. They value quality and they research the products they buy. Our target customers are willing to spend more money on products that are of higher quality and last longer.
-Company Advantages
-Wooden Grain Toys has the following advantages compared to competitors:
-Basic, practical designs.
-Safe, non-toxic paints, parts, and accessories.
-Easy-to-assemble parts.
-All components are manufactured in America and made with grade-A wood, high quality steel, and rubber.
-Quick, 48-hour delivery since our goal is to keep at least 50 units of each toy in stock.
-High-quality, interactive website.
-Face-to-face interaction with customers at craft shows over a three state area.
-Regulations
-Wooden Grain Toys must meet all federal and state regulations concerning toy manufacturing. Specifically, Code of Federal Regulations in Title 42, Parts 1234 and 9876.50, 51, 52 and 89 C.F.R. 5555.18(a)(9); Consumer Product Safety Improvement Act of 2008; Lead-Free Toys Act; and Title 99.9 of the Code of Oregon.
-
-Service Line
-Product/Service
-Wooden Grain Toys will sell wooden toys made from solid hardwoods (maple, beech, birch, cherry, and oak) and steel rivets. The toys are handcrafted and designed for small children to easily use. Our line currently includes the following nine models:
-All-Purpose Pick-Up Truck w/movable doors and tailgate
-Dump Truck w/functioning dumping mechanism and box
-Biplane (two-seater) w/movable propeller
-Steam engine with coal tender - additional cars available separately:
-Caboose, flat car w/logs, box car, tank car, coal car
-City Bus
-Tow Truck
-Flat-Bed Truck w/logs
-Sports Car
-Sedan
-Pricing Structure
-Wooden Grain Toys will offer its products for the following prices:
-All-Purpose Pick-Up Truck w/movable doors and tailgate - $25
-Dump Truck w/functioning dumping mechanism and box - $30
-Biplane (two-seater) w/movable propeller - $20
-Additional train cars (single car) - $5
-Additional train cars (three cars) - $12
-City Bus - $12
-Tow Truck - $18
-Flat-Bed Truck w/logs - $35
-Sports Car - $20
-Sedan - $20
-Product Lifecycle
-All current Wooden Grain Toys products are in production and inventory is being accumulated.
-Intellectual Property Rights
-Wooden Grain Toys is a trademarked name in the State of Oregon.
-Research and Development
-The company is planning to conduct the following research and development:
-Include a feedback mechanism on the website for ideas, suggestions, and improvements
-Provide comment cards for distribution at craft fairs
-Review available market research to identify top children’s toys and reason(s) for their popularity
-Marketing & Sales
-Growth Strategy
-To grow the company, Wooden Grain Toys will do the following:
-Sell products at craft fairs in California, Oregon, and Washington.
-As business grows, advertise in target markets, especially in advance of the holiday season.
-Communicate with the Customer
-Wooden Grain Toys will communicate with its customers by:
-Providing an email newsletter with company news, product information, and craft fair schedule.
-Using targeted Google and Facebook advertisements.
-Utilizing social media such as Twitter, YouTube, Facebook, LinkedIn, Pintrest and Tumblr.
-Providing contact information on the company website.
-Adding labels on toys that include company name, contact info, and web address.
-How to Sell
-Currently, the only person in charge of sales for Wooden Grain Toys is the owner, Andrew Robertson. As profits increase, Wooden Grain Toys will look to add an employee to assist with social media and online marketing. The target demographic for the company will be parents of children aged 3-10. The company will increase awareness to our targeted customers through online advertising and attending craft fairs. 
-
-EXAMPLE BUSINESS PLAN 2:
-We Can Do It Consulting
-Business Plan
-
-Rebecca Champ, Owner
-Created on December 29, 2016
-
-Executive Summary
-Product
-We Can Do It Consulting provides consultation services to small- and medium-sized companies. Our services include office management and business process reengineering to improve efficiency and reduce administrative costs.
-Customers
-The target audience for We Can Do It Consulting is business owners, human resources directors, program managers, presidents, or CEOs with 5 to 500 employees who want to increase productivity and reduce overhead costs. Specifically, we specialize in consulting white collar executives on office processes such as job tracking, production, getting the most out of meetings, leadership, financial or hiring best practices, and other needs relevant to potential customers who serve in a management role within small or large organizations that may be bogged down by processes, bureaucracy, or technical experts with little leadership experience.
-Future of the Company
-Consulting is a fast-paced, evolving industry. In response to this climate, We Can Do It Consulting will offer other services, including facilitation and requirements analysis in the future.
-
-Company Description
-Mission Statement
-To provide quality services to our clients that will help their companies prosper and grow.
-Principal Members
-Rebecca Champ — owner, primary consultant
-Guy Champ — business manager/sales
-Sophie Roberts — account manager
-Legal Structure
-We Can Do It Consulting is an S Corporation, incorporated in Greenville, South Carolina.
-
-Market Research
-Industry
-We Can Do It Consulting will join the office management and business process improvement consulting industry. Generally, larger consulting firms, such as KEG Consulting, work with international corporations while smaller consulting firms work with both large corporations and smaller organizations, usually closer to home. Consulting firms structured like ours also have a history of working with local, state, and federal government agencies. The consulting industry is still recovering from the economic recession. It was hit hardest in 2009 when the industry shrank by 9.1%. However, as the economy recovers, the industry is showing signs of growth. A recent study stated that operations management consulting is projected to grow by 5.1% per year for the next several years.
-Detailed Description of Customers
-The target customers for We Can Do It Consulting are business owners, human resources directors, program managers, presidents or CEOs with 5 to 500 employees who want to increase productivity and reduce overhead costs. Specifically, we specialize in consulting white collar executives on office processes such as job tracking, production, getting the most out of meetings, leadership, financial or hiring best practices, and other needs relevant to potential customers who serve in a management role within small or large organizations that may be bogged down by processes, bureaucracy, or technical experts with little leadership experience. To capitalize on opportunities that are geographically close as we start and grow our business, We Can Do It Consulting will specifically target executives within companies in the manufacturing, automotive, healthcare, and defense industries. This will allow us to take advantage of the company’s close proximity to hospitals (one of the largest employers in the region), automobile and vehicle parts factories, and government contractors supporting the nearby former Air Force base, now an aviation technology center.
-Company Advantages
-Because We Can Do It Consulting provides services, as opposed to a product, our advantages are only as strong as our consultants. Aside from ensuring our team is flexible, fast, can provide expert advice and can work on short deadlines, we will take the following steps to support consulting services:
-Maintain only PMP-certified project managers
-Ensure account team members use our proprietary planning and reporting process to stay in touch with customers and keep them updated on projects
-Provide public speaking training for all consultants
-Develop close relationships with subcontractors who can support us in areas such as graphic design, to ensure materials and presentations are always clear and maintain a consistent brand
-All our staff members have at least a four-year degree, with 20% having an advanced degree
-We are a virtual company without a lot of overhead costs or strict corporate rules, which saves time, money and creates a flexible workplace for getting things done
-Regulations
-We Can Do It Consulting must meet all Federal and state regulations concerning business consulting. Specifically, Code of Federal Regulations in Title 64, Parts 8753 and 4689.62, 65, and 74 and Title 86.7 of the Code of South Carolina.
-
-Service Line
-Product/Service
-Services Include:
-Business Process Reengineering Analysis
-Office Management Analysis
-On-Site Office Management Services
-Business Process Reengineering Facilitation
-Analytics
-Change Management
-Customer Relationship Management
-Financial Performance
-Operations Improvement
-Risk Management
-Pricing Structure
-We Can Do It Consulting will offer its services at an hourly rate using the following labor categories and rates:
-Principal, $150
-Account Executive, $140
-Project Manager, $135
-Project Coordinator, $100
-Business Analyst, $90
-Process Analyst, $90
-Financial Analyst, $85
-Technologist, $75
-Product Lifecycle
-All services are ready to be offered to clients, pending approval of contracts.
-Intellectual Property Rights
-We Can Do It Consulting is a trademarked name in the state of South Carolina, and we have filed for protection of our proprietary processes and other intellectual property, such as our logo. We have also registered our domain name and parked relevant social media accounts for future use and to prevent the likelihood of someone impersonating one of our consultants.
-Research and Development
-The company is planning to conduct the following research and development:
-Create a custom technology solution for manufacturers of vehicles such as automobiles or airplanes that helps better track each manufactured piece and its status in the assembly process
-Determine the need for additional consulting services within our market related to tying improved processes to opportunities for increased sales and promotion to potential customers
-Find trends in software solutions that may provide potentially competitive automated services in order to ensure We Can Do It Consulting continues to carefully carve its niche in the marketplace
-
-Marketing & Sales
-Growth Strategy
-To grow the company, We Can Do It Consulting will do the following:
-Network at manufacturing, automobile industry, and healthcare conferences
-Establish a company website that contains engaging multimedia content about our services
-As the business grows, advertise in publications that reach our target industries
-Communicate with the Customer
-We Can Do It Consulting will communicate with its customers by:
-Meeting with local managers within targeted companies
-Using social media such as Twitter, YouTube, Facebook, and LinkedIn
-Providing contact information on the company website
-How to Sell
-Currently, the only person in charge of sales for We Can Do It Consulting is the business manager, Guy Champ. As profits increase, We Can Do It will look to add an employee to assist with account management/coordination. This individual will also provide company social media and online marketing support. The company will increase awareness to our targeted customers through online advertising, proactive public relations campaigns, and attending tradeshows.
-
-`;
-
 export async function POST(request) {
   const headers = { ...corsHeaders };
 
@@ -266,20 +35,13 @@ export async function POST(request) {
     const writer = stream.writable.getWriter();
     const encoder = new TextEncoder();
 
-    // Start the OpenAI stream with enhanced prompts
+    // Start the OpenAI stream
     const completion = await openai.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "system",
-          content: evaluationGuidelines,
-        },
-        {
-          role: "system",
-          content: examplePlans,
+          content:
+            "You are an expert business plan writer with extensive knowledge of SBA requirements and business planning best practices. Generate a well-structured plan with clear section headings and professional formatting.",
         },
         {
           role: "user",
@@ -288,7 +50,7 @@ export async function POST(request) {
       ],
       model: "gpt-4",
       temperature: 0.7,
-      max_tokens: 8000, // Increased for more comprehensive output
+      max_tokens: 4000,
       stream: true,
     });
 
@@ -333,87 +95,28 @@ function generatePrompt(userData) {
     ? `an established business with ${userData.yearsInOperation} years of operation, current annual revenue of ${userData.currentRevenue}, and ${userData.currentEmployees} employees`
     : "a new business venture";
 
-  // Enhanced section prompts based on business status
+  // Create different section prompts based on business status
   const marketAnalysisPrompt = isEstablished
-    ? `Current Market Position: ${userData.marketPosition}
-Existing Customer Base: ${userData.existingCustomerBase}
-Market Analysis:
-- Detailed analysis of ${userData.targetMarket}
-- Customer need addressed: ${userData.customerNeed}
-- Competition analysis: ${userData.competition}
-- Market size and growth potential
-- Industry trends and dynamics
-- Regulatory environment impact
-- Market entry barriers
-- Competitive advantages and positioning`
-    : `Market Analysis:
-- Detailed analysis of ${userData.targetMarket}
-- Customer need addressed: ${userData.customerNeed}
-- Competition analysis: ${userData.competition}
-- Market size and growth potential
-- Industry trends and dynamics
-- Regulatory environment impact
-- Market entry barriers
-- Competitive advantages and positioning`;
+    ? `Current Market Position: ${userData.marketPosition}\nExisting Customer Base: ${userData.existingCustomerBase}\nMarket Analysis: Analysis of ${userData.targetMarket}, addressing ${userData.customerNeed}, with competition analysis: ${userData.competition}`
+    : `Market Analysis: Analysis of ${userData.targetMarket}, addressing ${userData.customerNeed}, with competition analysis: ${userData.competition}`;
 
   const operationsPrompt = isEstablished
-    ? `Current Operations:
-- Operational History: ${userData.operationalHistory}
-- Location & Facilities: ${userData.location}
-- Production/Service Process: ${userData.productionProcess}
-- Inventory & Fulfillment: ${userData.inventoryFulfillment}
-- Quality control measures
-- Supply chain management
-- Technology infrastructure
-- Operational efficiency metrics
-- Capacity utilization
-- Resource allocation strategy`
-    : `Proposed Operations:
-- Location & Facilities: ${userData.location}
-- Production/Service Process: ${userData.productionProcess}
-- Inventory & Fulfillment: ${userData.inventoryFulfillment}
-- Quality control measures
-- Supply chain management
-- Technology infrastructure
-- Operational efficiency metrics
-- Capacity planning
-- Resource allocation strategy`;
+    ? `Current Operations: ${userData.operationalHistory}\nLocation & Facilities: ${userData.location}\nProduction/Service: ${userData.productionProcess}\nInventory & Fulfillment: ${userData.inventoryFulfillment}`
+    : `Proposed Operations: Location & Facilities: ${userData.location}\nProduction/Service: ${userData.productionProcess}\nInventory & Fulfillment: ${userData.inventoryFulfillment}`;
 
   const financialsPrompt = isEstablished
-    ? `Financial Analysis:
-- Historical Performance: ${userData.historicalFinancials}
-- Funding Requirements: ${userData.initialFunding}
-- Funding Purpose: ${userData.fundingPurpose}
-- Projected Timeline: ${userData.profitabilityTimeline}
-- Detailed financial projections (3-5 years)
-- Break-even analysis
-- Cash flow projections
-- Key financial metrics
-- Investment return analysis
-- Risk assessment and mitigation`
-    : `Financial Analysis:
-- Initial Funding Requirements: ${userData.initialFunding}
-- Projected Timeline: ${userData.profitabilityTimeline}
-- Detailed financial projections (3-5 years)
-- Break-even analysis
-- Cash flow projections
-- Key financial metrics
-- Investment return analysis
-- Risk assessment and mitigation`;
+    ? `Historical Performance: ${userData.historicalFinancials}\nFunding Requirements: ${userData.initialFunding}\nFunding Purpose: ${userData.fundingPurpose}\nProjected Timeline: ${userData.profitabilityTimeline}`
+    : `Initial Funding Requirements: ${userData.initialFunding}\nProjected Timeline: ${userData.profitabilityTimeline}`;
 
   return `Generate a comprehensive SBA-ready business plan for ${businessContext} with the following information:
 
-EXECUTIVE SUMMARY
-[Provide a compelling overview that captures the essence of the business opportunity, highlighting key strengths, market potential, and financial projections]
-
-BUSINESS OVERVIEW:
+Business Overview:
 Company Name: ${userData.businessName}
 Description: ${userData.businessDescription}
 Legal Structure: ${userData.legalStructure}
 Key Personnel: ${userData.personnel}
-[Include management team qualifications and roles]
 
-PRODUCTS & SERVICES:
+Products & Services:
 ${userData.productsServices}
 Unique Value Proposition: ${userData.uniqueFeatures}
 ${
@@ -421,57 +124,40 @@ ${
     ? `Current Market Presence: ${userData.currentMarketPresence}`
     : ""
 }
-[Include detailed product/service descriptions, development status, and intellectual property]
 
 ${marketAnalysisPrompt}
 
-MARKETING & SALES STRATEGY:
+Marketing & Sales Strategy:
 Pricing Strategy: ${userData.pricingStrategy}
 Sales Channels: ${userData.salesChannels}
 Brand Message: ${userData.brandMessage}
 Marketing Methods: ${userData.marketingMethods}
 Online Presence: ${userData.onlinePresence}
-[Include detailed marketing plan, customer acquisition strategy, and sales process]
 
 ${operationsPrompt}
 
-REGULATORY COMPLIANCE:
+Regulatory Compliance:
 ${userData.regulations}
-[Include detailed compliance requirements and mitigation strategies]
 
-GROWTH STRATEGY:
+Growth Strategy:
 Short-term Goals (12 months): ${userData.shortTermGoals}
 Long-term Goals (2-5 years): ${userData.longTermGoals}
 Scalability Plans: ${userData.scalabilityPlans}
-[Include detailed implementation timeline and resource requirements]
 
 ${financialsPrompt}
 
-QUALITY CONTROL & FEEDBACK:
+Quality Control & Feedback:
 ${userData.qualityFeedback}
-[Include quality assurance processes and customer feedback mechanisms]
 
-RISK ANALYSIS:
-[Provide comprehensive analysis of:
-- Market risks and mitigation strategies
-- Operational risks and contingency plans
-- Financial risks and management approach
-- Competitive risks and defensive strategies
-- Regulatory risks and compliance measures]
-
-Please generate a comprehensive, SBA-ready business plan that:
+Please generate a well-structured, professional business plan that:
 1. Follows SBA guidelines and formatting requirements
-2. Includes all necessary sections with detailed analysis
-3. Provides comprehensive financial projections and analysis
+2. Includes all necessary sections with appropriate headings
+3. Provides detailed analysis and projections
 4. ${
     isEstablished
-      ? "Emphasizes growth potential, historical success, and future opportunities"
-      : "Emphasizes market opportunity, execution strategy, and growth potential"
+      ? "Emphasizes growth potential and historical success"
+      : "Emphasizes market opportunity and execution strategy"
   }
 5. Maintains a professional and confident tone
-6. Includes specific, actionable implementation strategies
-7. Provides detailed risk analysis and mitigation plans
-8. Incorporates industry-specific metrics and benchmarks
-9. Demonstrates clear understanding of market dynamics and competition
-10. Shows realistic and well-supported financial projections`;
+6. Includes an executive summary at the beginning`;
 }
