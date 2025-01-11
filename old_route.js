@@ -1,29 +1,21 @@
-import { NextResponse } from "next/server";
 import OpenAI from "openai";
-
-export const runtime = "edge";
-export const maxDuration = 300;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "*",
-  "Access-Control-Max-Age": "86400",
-};
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: corsHeaders,
-  });
-}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// System prompts and guidelines
-const systemPrompt = `You are an expert business consultant specializing in preparing SBA-ready business plans and financial projections. Your expertise includes market analysis, financial modeling, competitive analysis, and strategic planning. Approach each business plan with attention to detail, realistic projections, and actionable strategies. Use specific industry knowledge and current market trends to enhance the plans.
+export async function POST(req) {
+  try {
+    const body = await req.json();
+    const { userData } = body;
+
+    // Add validation
+    if (!userData) {
+      return Response.json({ error: "No user data provided" }, { status: 400 });
+    }
+
+    // System prompts
+    const systemPrompt = `You are an expert business consultant specializing in preparing SBA-ready business plans and financial projections. Your expertise includes market analysis, financial modeling, competitive analysis, and strategic planning. Approach each business plan with attention to detail, realistic projections, and actionable strategies. Use specific industry knowledge and current market trends to enhance the plans.
 
 Key Responsibilities:
 - Create comprehensive, actionable business plans
@@ -33,14 +25,15 @@ Key Responsibilities:
 - Provide detailed implementation strategies
 - Assess and address potential risks`;
 
-const exampleContext = `The following examples demonstrate successful business plans. Pay attention to their structure, depth of analysis, and professional tone. When creating new plans:
+    const exampleContext = `The following examples demonstrate successful business plans. Pay attention to their structure, depth of analysis, and professional tone. When creating new plans:
 - Maintain consistent level of detail while adapting to specific industry
 - Follow similar section organization but customize content
 - Use similar depth of financial analysis
 - Mirror the professional language and presentation
-- Adapt market analysis to current conditions`;
+- Adapt market analysis to current conditions
+`;
 
-const examples = `
+    const examples = `
 EXAMPLE BUSINESS PLAN 1:
 Wooden Grain Toy Company
 Business Plan
@@ -223,7 +216,7 @@ Currently, the only person in charge of sales for We Can Do It Consulting is the
 
 `;
 
-const evaluationGuidelines = `When creating business plans, ensure:
+    const evaluationGuidelines = `When creating business plans, ensure:
 
 FINANCIAL PROJECTIONS
 - All projections are realistic and well-justified
@@ -260,120 +253,7 @@ METRICS & MILESTONES
 - Establish review periods
 - Detail growth indicators`;
 
-export async function POST(request) {
-  const headers = { ...corsHeaders };
-
-  try {
-    const formData = await request.formData();
-    const userDataString = formData.get("userData");
-    const userData = JSON.parse(userDataString);
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "system",
-          content: exampleContext,
-        },
-        {
-          role: "system",
-          content: evaluationGuidelines,
-        },
-        {
-          role: "system",
-          content: examples,
-        },
-        {
-          role: "user",
-          content: generateEnhancedPrompt(userData),
-        },
-      ],
-      functions: [
-        {
-          name: "generate_business_plan",
-          description:
-            "Generate a structured business plan with specific sections",
-          parameters: {
-            type: "object",
-            properties: {
-              executive_summary: { type: "string" },
-              company_description: { type: "string" },
-              market_analysis: { type: "string" },
-              product_service_line: { type: "string" },
-              marketing_sales: { type: "string" },
-              operations: { type: "string" },
-              financial_projections: { type: "string" },
-              risk_analysis: { type: "string" },
-            },
-            required: [
-              "executive_summary",
-              "company_description",
-              "market_analysis",
-              "product_service_line",
-              "marketing_sales",
-              "operations",
-              "financial_projections",
-              "risk_analysis",
-            ],
-          },
-        },
-      ],
-      function_call: { name: "generate_business_plan" },
-      temperature: 0.5,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.1,
-    });
-
-    // Parse the function response
-    const functionResponse = JSON.parse(
-      completion.choices[0].message.function_call.arguments
-    );
-
-    // Format the plan sections
-    const plan = `
-EXECUTIVE SUMMARY
-${functionResponse.executive_summary}
-
-COMPANY DESCRIPTION
-${functionResponse.company_description}
-
-MARKET ANALYSIS
-${functionResponse.market_analysis}
-
-PRODUCT/SERVICE LINE
-${functionResponse.product_service_line}
-
-MARKETING & SALES
-${functionResponse.marketing_sales}
-
-OPERATIONS
-${functionResponse.operations}
-
-FINANCIAL PROJECTIONS
-${functionResponse.financial_projections}
-
-RISK ANALYSIS
-${functionResponse.risk_analysis}
-    `.trim();
-
-    return NextResponse.json({ plan }, { headers });
-  } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: error.message || "An error occurred" },
-      { status: 500, headers }
-    );
-  }
-}
-
-function generateEnhancedPrompt(userData) {
-  const isEstablished = userData.businessStatus === "established";
-
-  return `
+    const enhancedUserContent = `
 Based on the provided business information, create a comprehensive SBA-ready business plan that includes:
 
 1. EXECUTIVE SUMMARY
@@ -506,4 +386,106 @@ Additional Requirements:
 - Detail specific marketing and sales strategies
 - Outline clear operational procedures
 - Provide specific financial assumptions`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "system",
+          content: exampleContext,
+        },
+        {
+          role: "system",
+          content: evaluationGuidelines,
+        },
+        {
+          role: "system",
+          content: examples,
+        },
+        {
+          role: "user",
+          content: enhancedUserContent,
+        },
+      ],
+      functions: [
+        {
+          name: "generate_business_plan",
+          description:
+            "Generate a structured business plan with specific sections",
+          parameters: {
+            type: "object",
+            properties: {
+              executive_summary: { type: "string" },
+              company_description: { type: "string" },
+              market_analysis: { type: "string" },
+              product_service_line: { type: "string" },
+              marketing_sales: { type: "string" },
+              operations: { type: "string" },
+              financial_projections: { type: "string" },
+              risk_analysis: { type: "string" },
+            },
+            required: [
+              "executive_summary",
+              "company_description",
+              "market_analysis",
+              "product_service_line",
+              "marketing_sales",
+              "operations",
+              "financial_projections",
+              "risk_analysis",
+            ],
+          },
+        },
+      ],
+      function_call: { name: "generate_business_plan" },
+      max_tokens: 10000,
+      temperature: 0.5,
+      presence_penalty: 0.1,
+      frequency_penalty: 0.1,
+    });
+
+    // Since we're using function calling, we need to parse the function response
+    const functionResponse = JSON.parse(
+      completion.choices[0].message.function_call.arguments
+    );
+
+    // Format the plan sections into a single string
+    const plan = `
+EXECUTIVE SUMMARY
+${functionResponse.executive_summary}
+
+COMPANY DESCRIPTION
+${functionResponse.company_description}
+
+MARKET ANALYSIS
+${functionResponse.market_analysis}
+
+PRODUCT/SERVICE LINE
+${functionResponse.product_service_line}
+
+MARKETING & SALES
+${functionResponse.marketing_sales}
+
+OPERATIONS
+${functionResponse.operations}
+
+FINANCIAL PROJECTIONS
+${functionResponse.financial_projections}
+
+RISK ANALYSIS
+${functionResponse.risk_analysis}
+    `.trim();
+
+    return Response.json({ plan });
+  } catch (error) {
+    console.error("API Error:", error);
+    return Response.json(
+      { error: "Error generating business plan: " + error.message },
+      { status: 500 }
+    );
+  }
 }
