@@ -333,34 +333,35 @@ export async function POST(request) {
       completion.choices[0].message.function_call.arguments
     );
 
-    // Format the plan sections
-    const plan = `
-EXECUTIVE SUMMARY
-${functionResponse.executive_summary}
+    // Format the plan sections with proper line breaks and section headers
+    const formattedPlan = [
+      "EXECUTIVE SUMMARY",
+      functionResponse.executive_summary,
+      "",
+      "COMPANY DESCRIPTION",
+      functionResponse.company_description,
+      "",
+      "MARKET ANALYSIS",
+      functionResponse.market_analysis,
+      "",
+      "PRODUCT/SERVICE LINE",
+      functionResponse.product_service_line,
+      "",
+      "MARKETING & SALES",
+      functionResponse.marketing_sales,
+      "",
+      "OPERATIONS",
+      functionResponse.operations,
+      "",
+      "FINANCIAL PROJECTIONS",
+      functionResponse.financial_projections,
+      "",
+      "RISK ANALYSIS",
+      functionResponse.risk_analysis,
+    ].join("\n\n");
 
-COMPANY DESCRIPTION
-${functionResponse.company_description}
-
-MARKET ANALYSIS
-${functionResponse.market_analysis}
-
-PRODUCT/SERVICE LINE
-${functionResponse.product_service_line}
-
-MARKETING & SALES
-${functionResponse.marketing_sales}
-
-OPERATIONS
-${functionResponse.operations}
-
-FINANCIAL PROJECTIONS
-${functionResponse.financial_projections}
-
-RISK ANALYSIS
-${functionResponse.risk_analysis}
-    `.trim();
-
-    return NextResponse.json({ plan }, { headers });
+    // Return the formatted plan as a plain string
+    return NextResponse.json({ plan: formattedPlan }, { headers });
   } catch (error) {
     console.error("Error:", error);
     return NextResponse.json(
