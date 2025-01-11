@@ -5,9 +5,6 @@ const nextConfig = {
   experimental: {
     serverMinification: false,
   },
-  outputFileTracingIncludes: {
-    "/api/**/*": ["./src/app/api/**/*"],
-  },
   images: {
     remotePatterns: [
       {
