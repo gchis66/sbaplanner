@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import connectDB from "../../lib/mongodb";
-import EmailRecord from "../../models/EmailRecord";
 import { sendBusinessPlan } from "../../lib/email";
 import { generatePdf, generateDocx } from "../../lib/documentGenerator";
 
@@ -16,14 +14,6 @@ export async function POST(request) {
       generatePdf(businessName, plan),
       generateDocx(businessName, plan),
     ]);
-
-    // Connect to MongoDB and store the record
-    await connectDB();
-    await EmailRecord.create({
-      businessName,
-      recipientEmail: email,
-      planContent: plan,
-    });
 
     // Send email with attachments
     await sendBusinessPlan(email, businessName, pdfBuffer, docxBuffer);
