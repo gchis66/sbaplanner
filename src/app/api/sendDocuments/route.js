@@ -9,15 +9,12 @@ export const runtime = "nodejs";
 
 export async function POST(request) {
   try {
-    const { businessName, email, plan, businessStatus, logo } =
-      await request.json();
+    const { businessName, email, plan } = await request.json();
 
-    // Generate documents with logo if provided
-    const logoBuffer = logo ? Buffer.from(logo.split(",")[1], "base64") : null;
-
+    // Generate documents
     const [pdfBuffer, docxBuffer] = await Promise.all([
-      generatePdf(businessName, plan, logoBuffer),
-      generateDocx(businessName, plan, logoBuffer),
+      generatePdf(businessName, plan),
+      generateDocx(businessName, plan),
     ]);
 
     // Connect to MongoDB and store the record
@@ -25,9 +22,7 @@ export async function POST(request) {
     await EmailRecord.create({
       businessName,
       recipientEmail: email,
-      businessStatus,
       planContent: plan,
-      createdAt: new Date(),
     });
 
     // Send email with attachments
