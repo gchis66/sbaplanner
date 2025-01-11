@@ -224,6 +224,8 @@ export default function BusinessPlanForm() {
           businessName: formData.businessName,
           email: formData.email,
           plan: plan,
+          businessStatus: formData.businessStatus,
+          logo: logoPreview, // Send the base64 logo if it exists
         }),
       });
 

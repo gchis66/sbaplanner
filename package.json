@@ -4,24 +4,25 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/",
+    "build": "next build && mkdir -p .next/standalone/server/app && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/ && cp -r src/app/api .next/standalone/server/app/",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "docx": "^9.1.0",
     "jspdf": "^2.5.2",
-    "next": "14.1.0",
-    "nodemailer": "^6.9.9",
-    "openai": "^4.26.0",
-    "react": "^18",
-    "react-dom": "^18"
+    "mongoose": "^8.9.3",
+    "next": "15.1.1",
+    "nodemailer": "^6.9.16",
+    "openai": "^4.77.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "autoprefixer": "^10.0.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.1.0",
+    "@eslint/eslintrc": "^3",
+    "eslint": "^9",
+    "eslint-config-next": "15.1.1",
     "postcss": "^8",
-    "tailwindcss": "^3.3.0"
+    "tailwindcss": "^3.4.1"
   }
 }
