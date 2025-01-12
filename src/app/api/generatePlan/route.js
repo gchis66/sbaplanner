@@ -261,13 +261,22 @@ METRICS & MILESTONES
 - Detail growth indicators`;
 
 export async function POST(request) {
-  const headers = { ...corsHeaders };
+  const headers = {
+    ...corsHeaders,
+    "Content-Type": "text/plain; charset=utf-8",
+  };
 
   try {
     const formData = await request.formData();
     const userDataString = formData.get("userData");
     const userData = JSON.parse(userDataString);
 
+    // Create a TransformStream for streaming the response
+    const stream = new TransformStream();
+    const writer = stream.writable.getWriter();
+    const encoder = new TextEncoder();
+
+    // Start the OpenAI stream
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
@@ -292,82 +301,79 @@ export async function POST(request) {
           content: generateEnhancedPrompt(userData),
         },
       ],
-      functions: [
-        {
-          name: "generate_business_plan",
-          description:
-            "Generate a structured business plan with specific sections",
-          parameters: {
-            type: "object",
-            properties: {
-              executive_summary: { type: "string" },
-              company_description: { type: "string" },
-              market_analysis: { type: "string" },
-              product_service_line: { type: "string" },
-              marketing_sales: { type: "string" },
-              operations: { type: "string" },
-              financial_projections: { type: "string" },
-              risk_analysis: { type: "string" },
-            },
-            required: [
-              "executive_summary",
-              "company_description",
-              "market_analysis",
-              "product_service_line",
-              "marketing_sales",
-              "operations",
-              "financial_projections",
-              "risk_analysis",
-            ],
-          },
-        },
-      ],
-      function_call: { name: "generate_business_plan" },
-      temperature: 0.5,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.1,
+      stream: true,
+      temperature: 0.7,
+      max_tokens: 4000,
     });
 
-    // Parse the function response
-    const functionResponse = JSON.parse(
-      completion.choices[0].message.function_call.arguments
-    );
-
-    // Format the plan sections with proper line breaks and section headers
-    const formattedPlan = [
+    let currentSection = "";
+    let sectionContent = "";
+    const sections = [
       "EXECUTIVE SUMMARY",
-      functionResponse.executive_summary,
-      "",
       "COMPANY DESCRIPTION",
-      functionResponse.company_description,
-      "",
       "MARKET ANALYSIS",
-      functionResponse.market_analysis,
-      "",
       "PRODUCT/SERVICE LINE",
-      functionResponse.product_service_line,
-      "",
       "MARKETING & SALES",
-      functionResponse.marketing_sales,
-      "",
       "OPERATIONS",
-      functionResponse.operations,
-      "",
       "FINANCIAL PROJECTIONS",
-      functionResponse.financial_projections,
-      "",
       "RISK ANALYSIS",
-      functionResponse.risk_analysis,
-    ].join("\n\n");
+    ];
 
-    // Return the formatted plan as a plain string
-    return NextResponse.json({ plan: formattedPlan }, { headers });
+    // Process the stream
+    (async () => {
+      try {
+        // Write initial content type for streaming
+        await writer.write(encoder.encode(""));
+
+        for await (const chunk of completion) {
+          const content = chunk.choices[0]?.delta?.content || "";
+          if (content) {
+            // Check if we're starting a new section
+            const matchedSection = sections.find((section) =>
+              content.includes(section)
+            );
+            if (matchedSection) {
+              // If we have content from previous section, write it with proper formatting
+              if (currentSection && sectionContent) {
+                await writer.write(
+                  encoder.encode(`\n\n${currentSection}\n${sectionContent}\n`)
+                );
+                sectionContent = "";
+              }
+              currentSection = matchedSection;
+            } else {
+              // Append content to current section
+              sectionContent += content;
+            }
+
+            // Write the content directly to maintain streaming
+            await writer.write(encoder.encode(content));
+          }
+        }
+
+        // Write any remaining content
+        if (currentSection && sectionContent) {
+          await writer.write(encoder.encode(`\n${sectionContent}`));
+        }
+      } catch (error) {
+        console.error("Streaming error:", error);
+        await writer.write(
+          encoder.encode(
+            "\n\nError generating business plan. Please try again."
+          )
+        );
+      } finally {
+        await writer.close();
+      }
+    })();
+
+    return new Response(stream.readable, { headers });
   } catch (error) {
     console.error("Error:", error);
-    return NextResponse.json(
-      { error: error.message || "An error occurred" },
-      { status: 500, headers }
-    );
+    return new Response("Error generating business plan: " + error.message, {
+      status: 500,
+      headers,
+    });
   }
 }
 
