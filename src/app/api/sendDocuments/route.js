@@ -7,15 +7,15 @@ export const runtime = "nodejs";
 
 export async function POST(request) {
   try {
-    const { businessName, email, plan, businessStatus, logo } =
+    const { businessName, email, plan, businessStatus, logo, date } =
       await request.json();
 
     // Generate documents with logo if provided
     const logoBuffer = logo ? Buffer.from(logo.split(",")[1], "base64") : null;
 
     const [pdfBuffer, docxBuffer] = await Promise.all([
-      generatePdf(businessName, plan, logoBuffer),
-      generateDocx(businessName, plan, logoBuffer),
+      generatePdf(businessName, plan, logoBuffer, date),
+      generateDocx(businessName, plan, logoBuffer, date),
     ]);
 
     // Send email with attachments
