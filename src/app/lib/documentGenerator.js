@@ -28,7 +28,11 @@ function convertContentToSections(content) {
     .map((section) => {
       const [title, ...contentLines] = section.trim().split("\n");
       return {
-        title: title.replace(":", "").trim(),
+        title: title
+          .replace(":", "")
+          .trim()
+          // Remove any numbering from the title (e.g., "1. ", "8. ")
+          .replace(/^\d+\.\s*/, ""),
         content: contentLines.join("\n").trim(),
       };
     })
@@ -151,7 +155,7 @@ export async function generateDocx(businessName, content, logoBase64, date) {
         children: [
           new TextRun({
             text: section.title.toUpperCase(),
-            size: 40, // 20pt
+            size: 48, // 24pt
             bold: true,
             font: "Arial",
           }),
@@ -225,12 +229,6 @@ export async function generateDocx(businessName, content, logoBase64, date) {
       default: new Footer({
         children: [
           new Paragraph({
-            tabStops: [
-              {
-                type: AlignmentType.RIGHT,
-                position: 10440, // Position at the right margin
-              },
-            ],
             children: [
               new TextRun({
                 text: businessName,
@@ -242,10 +240,17 @@ export async function generateDocx(businessName, content, logoBase64, date) {
                 text: "\t",
               }),
               new TextRun({
+                text: "",
                 children: [PageNumber.CURRENT],
                 size: 20,
                 font: "Arial",
               }),
+            ],
+            tabStops: [
+              {
+                type: AlignmentType.RIGHT,
+                position: 9026, // Adjust position to ensure right alignment
+              },
             ],
           }),
         ],
@@ -344,10 +349,10 @@ export async function generatePdf(businessName, content, logoBase64, date) {
     yPosition = 30;
 
     // Section title with enhanced formatting
-    doc.setFontSize(20);
+    doc.setFontSize(24); // Increased from 20
     doc.setFont("helvetica", "bold");
     doc.text(section.title.toUpperCase(), margin, yPosition);
-    yPosition += 15;
+    yPosition += 20; // Increased spacing after title
 
     // Section content
     doc.setFontSize(12);
@@ -399,11 +404,15 @@ export async function generatePdf(businessName, content, logoBase64, date) {
     // Footer with business name and page number
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
+    // Left-aligned business name
     doc.text(businessName, margin, pageHeight - 10);
+
+    // Right-aligned page number
+    const pageNumWidth =
+      (doc.getStringUnitWidth(i.toString()) * doc.internal.getFontSize()) /
+      doc.internal.scaleFactor;
     doc.setFont("helvetica", "normal");
-    doc.text(i.toString(), pageWidth - margin, pageHeight - 10, {
-      align: "right",
-    });
+    doc.text(i.toString(), pageWidth - margin - pageNumWidth, pageHeight - 10);
   }
 
   return doc.output("arraybuffer");
