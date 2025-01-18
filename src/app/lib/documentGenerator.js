@@ -141,45 +141,17 @@ export async function generateDocx(businessName, content, logoBase64, date) {
     children: createTitlePage(businessName, logoBase64, date),
   });
 
-  // Table of Contents Section
-  documentSections.push({
-    properties: {
-      page: {
-        margin: {
-          top: 1440,
-          right: 1440,
-          bottom: 1440,
-          left: 1440,
-        },
-      },
-    },
-    children: [
-      new Paragraph({
-        text: "TABLE OF CONTENTS",
-        heading: HeadingLevel.HEADING_1,
-        alignment: AlignmentType.CENTER,
-        spacing: {
-          after: 400,
-        },
-      }),
-      new TableOfContents("Table of Contents", {
-        hyperlink: true,
-        headingStyleRange: "1-3",
-      }),
-    ],
-  });
-
   // Main Content Section
   const mainContentChildren = sections.flatMap((section) => {
     const sectionParagraphs = [];
 
-    // Add section title
+    // Add section title with enhanced formatting
     sectionParagraphs.push(
       new Paragraph({
         children: [
           new TextRun({
             text: section.title.toUpperCase(),
-            size: 32, // 16pt
+            size: 40, // 20pt
             bold: true,
             font: "Arial",
           }),
@@ -249,8 +221,8 @@ export async function generateDocx(businessName, content, logoBase64, date) {
         },
       },
     },
-    headers: {
-      default: new Header({
+    footers: {
+      default: new Footer({
         children: [
           new Paragraph({
             children: [
@@ -260,29 +232,16 @@ export async function generateDocx(businessName, content, logoBase64, date) {
                 size: 20, // 10pt
                 font: "Arial",
               }),
-            ],
-            alignment: AlignmentType.LEFT,
-          }),
-        ],
-      }),
-    },
-    footers: {
-      default: new Footer({
-        children: [
-          new Paragraph({
-            children: [
               new TextRun({
-                children: [
-                  "Page ",
-                  PageNumber.CURRENT,
-                  " of ",
-                  PageNumber.TOTAL_PAGES,
-                ],
+                text: "\t".repeat(16), // Add spacing between business name and page number
+              }),
+              new TextRun({
+                children: [PageNumber.CURRENT],
                 size: 20, // 10pt
                 font: "Arial",
               }),
             ],
-            alignment: AlignmentType.CENTER,
+            alignment: AlignmentType.LEFT,
           }),
         ],
       }),
@@ -374,34 +333,13 @@ export async function generatePdf(businessName, content, logoBase64, date) {
     });
   doc.text(currentDate, pageWidth / 2, yPosition, { align: "center" });
 
-  // Add new page for Table of Contents
-  doc.addPage();
-  yPosition = 30;
-
-  // Table of Contents
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("TABLE OF CONTENTS", pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 20;
-
-  // Add TOC entries
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  sections.forEach((section, index) => {
-    doc.text(section.title.toUpperCase(), margin, yPosition);
-    doc.text((index + 1).toString(), pageWidth - margin, yPosition, {
-      align: "right",
-    });
-    yPosition += 10;
-  });
-
   // Content pages
   sections.forEach((section) => {
     doc.addPage();
     yPosition = 30;
 
-    // Section title
-    doc.setFontSize(16);
+    // Section title with enhanced formatting
+    doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
     doc.text(section.title.toUpperCase(), margin, yPosition);
     yPosition += 15;
@@ -448,20 +386,18 @@ export async function generatePdf(businessName, content, logoBase64, date) {
     });
   });
 
-  // Add page numbers and headers to all pages except title page
+  // Add footers to all pages except title page
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 2; i <= pageCount; i++) {
     doc.setPage(i);
 
-    // Header
+    // Footer with business name and page number
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text(businessName, margin, 15);
-
-    // Footer with page numbers
+    doc.text(businessName, margin, pageHeight - 10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 10, {
-      align: "center",
+    doc.text(i.toString(), pageWidth - margin, pageHeight - 10, {
+      align: "right",
     });
   }
 
