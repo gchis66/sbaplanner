@@ -225,23 +225,28 @@ export async function generateDocx(businessName, content, logoBase64, date) {
       default: new Footer({
         children: [
           new Paragraph({
+            tabStops: [
+              {
+                type: AlignmentType.RIGHT,
+                position: 10440, // Position at the right margin
+              },
+            ],
             children: [
               new TextRun({
                 text: businessName,
                 bold: true,
-                size: 20, // 10pt
+                size: 20,
                 font: "Arial",
               }),
               new TextRun({
-                text: "\t".repeat(16), // Add spacing between business name and page number
+                text: "\t",
               }),
               new TextRun({
                 children: [PageNumber.CURRENT],
-                size: 20, // 10pt
+                size: 20,
                 font: "Arial",
               }),
             ],
-            alignment: AlignmentType.LEFT,
           }),
         ],
       }),
