@@ -383,7 +383,7 @@ function generateEnhancedPrompt(userData) {
   return `
 Based on the provided business information, create a comprehensive SBA-ready business plan that includes:
 
-1. EXECUTIVE SUMMARY
+ EXECUTIVE SUMMARY
 - Business overview and vision
 - Value proposition
 - Key success factors
@@ -392,7 +392,7 @@ Based on the provided business information, create a comprehensive SBA-ready bus
 - Management team qualifications
 - Funding requirements and use of funds
 
-2. COMPANY DESCRIPTION
+ COMPANY DESCRIPTION
 - Detailed business model
 - Organizational structure
 - Core competencies
@@ -402,7 +402,7 @@ Based on the provided business information, create a comprehensive SBA-ready bus
 - Operating hours and seasons
 - Insurance and liability management
 
-3. MARKET ANALYSIS
+ MARKET ANALYSIS
 - Industry overview and trends
 - Total market size and growth potential
 - Target market segmentation and size
@@ -414,7 +414,7 @@ Based on the provided business information, create a comprehensive SBA-ready bus
 - Entry barriers and regulations
 - Industry success factors
 
-4. PRODUCT/SERVICE LINE
+ PRODUCT/SERVICE LINE
 - Detailed product/service descriptions
 - Features and benefits
 - Competitive advantages
@@ -427,7 +427,7 @@ Based on the provided business information, create a comprehensive SBA-ready bus
 - Suppliers and vendors
 - Cost structure
 
-5. MARKETING AND SALES STRATEGY
+ MARKETING AND SALES STRATEGY
 - Positioning strategy
 - Pricing strategy and model
 - Distribution channels
@@ -440,7 +440,7 @@ Based on the provided business information, create a comprehensive SBA-ready bus
 - Brand development
 - Digital presence strategy
 
-6. OPERATIONAL PLAN
+ OPERATIONAL PLAN
 - Day-to-day operations
 - Production/service delivery process
 - Facility requirements and layout
@@ -452,7 +452,7 @@ Based on the provided business information, create a comprehensive SBA-ready bus
 - Key partnerships and relationships
 - Staffing and training plans
 
-7. FINANCIAL PROJECTIONS
+ FINANCIAL PROJECTIONS
 - Startup costs breakdown
 - 3-year financial forecasts
 - Monthly cash flow projections
@@ -464,7 +464,7 @@ Based on the provided business information, create a comprehensive SBA-ready bus
 - Use of funds
 - Exit strategy
 
-8. RISK ANALYSIS
+ RISK ANALYSIS
 - Market risks
 - Operational risks
 - Financial risks

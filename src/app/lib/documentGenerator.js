@@ -17,6 +17,7 @@ import {
   BorderStyle,
   TableOfContents,
   Spacing,
+  TabStopType,
 } from "docx";
 import { jsPDF } from "jspdf";
 import { Packer } from "docx";
@@ -26,15 +27,15 @@ function convertContentToSections(content) {
   const sections = content.split(/(?=\n[A-Z][^a-z\n:]*:)/);
   return sections
     .map((section) => {
-      const [title, ...contentLines] = section.trim().split("\n");
-      // First remove the colon, then remove any numbering pattern
-      const cleanTitle = title
-        .replace(/:\s*$/, "") // Remove colon at the end
-        .replace(/^\d+\.\s*/, "") // Remove number and dot at start
-        .replace(/^[A-Z\s]*\d+\.\s*/, "") // Remove any text followed by number and dot
+      let [title, ...contentLines] = section.trim().split("\n");
+
+      // Just remove the colon and trim
+      title = title
+        .replace(/:\s*$/, "") // Remove trailing colons
         .trim();
+
       return {
-        title: cleanTitle,
+        title: title,
         content: contentLines.join("\n").trim(),
       };
     })
@@ -137,7 +138,7 @@ export async function generateDocx(businessName, content, logoBase64, date) {
     properties: {
       page: {
         margin: {
-          top: 1440, // 1 inch
+          top: 1440,
           right: 1440,
           bottom: 1440,
           left: 1440,
@@ -157,26 +158,25 @@ export async function generateDocx(businessName, content, logoBase64, date) {
         children: [
           new TextRun({
             text: section.title.toUpperCase(),
-            size: 48, // 24pt
+            size: 48,
             bold: true,
             font: "Arial",
           }),
         ],
         heading: HeadingLevel.HEADING_1,
         spacing: {
-          before: 480, // 24pt
-          after: 240, // 12pt
+          before: 480,
+          after: 240,
           line: 360,
           lineRule: LineRuleType.AUTO,
         },
       })
     );
 
-    // Process content and split into paragraphs
+    // Rest of content processing remains the same
     const contentParagraphs = section.content.split("\n");
     contentParagraphs.forEach((para) => {
       if (para.trim().startsWith("- ")) {
-        // Bullet point
         sectionParagraphs.push(
           new Paragraph({
             text: para.trim().substring(2),
@@ -184,28 +184,27 @@ export async function generateDocx(businessName, content, logoBase64, date) {
               level: 0,
             },
             spacing: {
-              before: 120, // 6pt
-              after: 120, // 6pt
-              line: 276, // 1.15 lines
+              before: 120,
+              after: 120,
+              line: 276,
               lineRule: LineRuleType.AUTO,
             },
           })
         );
       } else {
-        // Regular paragraph
         sectionParagraphs.push(
           new Paragraph({
             children: [
               new TextRun({
                 text: para.trim(),
-                size: 24, // 12pt
+                size: 24,
                 font: "Arial",
               }),
             ],
             spacing: {
-              before: 240, // 12pt
-              after: 240, // 12pt
-              line: 276, // 1.15 lines
+              before: 240,
+              after: 240,
+              line: 276,
               lineRule: LineRuleType.AUTO,
             },
           })
@@ -216,6 +215,7 @@ export async function generateDocx(businessName, content, logoBase64, date) {
     return sectionParagraphs;
   });
 
+  // Add main content section with footer
   documentSections.push({
     properties: {
       page: {
@@ -231,16 +231,6 @@ export async function generateDocx(businessName, content, logoBase64, date) {
       default: new Footer({
         children: [
           new Paragraph({
-            spacing: {
-              before: 240,
-              after: 240,
-            },
-            tabStops: [
-              {
-                type: AlignmentType.RIGHT,
-                position: 8500, // Adjusted for better right alignment
-              },
-            ],
             children: [
               new TextRun({
                 text: businessName,
@@ -257,6 +247,12 @@ export async function generateDocx(businessName, content, logoBase64, date) {
                 font: "Arial",
               }),
             ],
+            tabStops: [
+              {
+                type: TabStopType.RIGHT,
+                position: 9026,
+              },
+            ],
           }),
         ],
       }),
@@ -272,14 +268,14 @@ export async function generateDocx(businessName, content, logoBase64, date) {
           name: "Normal",
           quickFormat: true,
           run: {
-            size: 24, // 12pt
+            size: 24,
             font: "Arial",
           },
           paragraph: {
             spacing: {
-              line: 276, // 1.15 line spacing
-              before: 240, // 12pt before
-              after: 240, // 12pt after
+              line: 276,
+              before: 240,
+              after: 240,
             },
           },
         },
@@ -354,19 +350,18 @@ export async function generatePdf(businessName, content, logoBase64, date) {
     yPosition = 30;
 
     // Section title with enhanced formatting
-    doc.setFontSize(24); // Increased from 20
+    doc.setFontSize(24);
     doc.setFont("helvetica", "bold");
     doc.text(section.title.toUpperCase(), margin, yPosition);
-    yPosition += 20; // Increased spacing after title
+    yPosition += 20;
 
     // Section content
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
 
-    // Split content into paragraphs
+    // Process paragraphs
     const paragraphs = section.content.split("\n");
     paragraphs.forEach((para) => {
-      // Handle bullet points
       if (para.trim().startsWith("- ")) {
         const bulletText = para.trim().substring(2);
         const lines = doc.splitTextToSize(bulletText, contentWidth - 10);
@@ -385,7 +380,6 @@ export async function generatePdf(businessName, content, logoBase64, date) {
         });
         yPosition += 3;
       } else {
-        // Regular paragraph
         const lines = doc.splitTextToSize(para.trim(), contentWidth);
 
         lines.forEach((line) => {
@@ -405,19 +399,19 @@ export async function generatePdf(businessName, content, logoBase64, date) {
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 2; i <= pageCount; i++) {
     doc.setPage(i);
-
-    // Footer with business name and page number
     doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
+
     // Left-aligned business name
+    doc.setFont("helvetica", "bold");
     doc.text(businessName, margin, pageHeight - 10);
 
-    // Right-aligned page number
-    const pageNumWidth =
-      (doc.getStringUnitWidth(i.toString()) * doc.internal.getFontSize()) /
-      doc.internal.scaleFactor;
+    // Right-aligned page number (calculate exact position)
     doc.setFont("helvetica", "normal");
-    doc.text(i.toString(), pageWidth - margin - pageNumWidth, pageHeight - 10);
+    const pageNumText = i.toString();
+    const pageNumWidth =
+      (doc.getStringUnitWidth(pageNumText) * doc.internal.getFontSize()) /
+      doc.internal.scaleFactor;
+    doc.text(pageNumText, pageWidth - margin - pageNumWidth, pageHeight - 10);
   }
 
   return doc.output("arraybuffer");
