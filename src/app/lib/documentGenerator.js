@@ -27,12 +27,14 @@ function convertContentToSections(content) {
   return sections
     .map((section) => {
       const [title, ...contentLines] = section.trim().split("\n");
+      // First remove the colon, then remove any numbering pattern
+      const cleanTitle = title
+        .replace(/:\s*$/, "") // Remove colon at the end
+        .replace(/^\d+\.\s*/, "") // Remove number and dot at start
+        .replace(/^[A-Z\s]*\d+\.\s*/, "") // Remove any text followed by number and dot
+        .trim();
       return {
-        title: title
-          .replace(":", "")
-          .trim()
-          // Remove any numbering from the title (e.g., "1. ", "8. ")
-          .replace(/^\d+\.\s*/, ""),
+        title: cleanTitle,
         content: contentLines.join("\n").trim(),
       };
     })
@@ -229,6 +231,16 @@ export async function generateDocx(businessName, content, logoBase64, date) {
       default: new Footer({
         children: [
           new Paragraph({
+            spacing: {
+              before: 240,
+              after: 240,
+            },
+            tabStops: [
+              {
+                type: AlignmentType.RIGHT,
+                position: 8500, // Adjusted for better right alignment
+              },
+            ],
             children: [
               new TextRun({
                 text: businessName,
@@ -240,17 +252,10 @@ export async function generateDocx(businessName, content, logoBase64, date) {
                 text: "\t",
               }),
               new TextRun({
-                text: "",
                 children: [PageNumber.CURRENT],
                 size: 20,
                 font: "Arial",
               }),
-            ],
-            tabStops: [
-              {
-                type: AlignmentType.RIGHT,
-                position: 9026, // Adjust position to ensure right alignment
-              },
             ],
           }),
         ],
