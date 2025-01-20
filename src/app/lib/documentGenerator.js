@@ -231,7 +231,6 @@ export async function generateDocx(businessName, content, logoBase64, date) {
       default: new Footer({
         children: [
           new Paragraph({
-            alignment: AlignmentType.LEFT,
             children: [
               new TextRun({
                 text: businessName,
@@ -240,7 +239,8 @@ export async function generateDocx(businessName, content, logoBase64, date) {
                 font: "Arial",
               }),
               new TextRun({
-                text: "\t",
+                text: "                                                                                    ", // Multiple spaces for separation
+                size: 20,
               }),
               new TextRun({
                 children: [PageNumber.CURRENT],
@@ -248,12 +248,7 @@ export async function generateDocx(businessName, content, logoBase64, date) {
                 font: "Arial",
               }),
             ],
-            tabStops: [
-              {
-                type: TabStopType.RIGHT,
-                position: 7200,
-              },
-            ],
+            alignment: AlignmentType.LEFT,
           }),
         ],
       }),
