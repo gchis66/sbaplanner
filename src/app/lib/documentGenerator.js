@@ -239,7 +239,7 @@ export async function generateDocx(businessName, content, logoBase64, date) {
                 font: "Arial",
               }),
               new TextRun({
-                text: "                                                                                                                                                                                                        ", // Increased spaces for more separation
+                text: "                                                                                                                      ", // 102 spaces
                 size: 20,
               }),
               new TextRun({
