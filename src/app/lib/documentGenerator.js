@@ -231,6 +231,7 @@ export async function generateDocx(businessName, content, logoBase64, date) {
       default: new Footer({
         children: [
           new Paragraph({
+            alignment: AlignmentType.LEFT,
             children: [
               new TextRun({
                 text: businessName,
@@ -250,7 +251,7 @@ export async function generateDocx(businessName, content, logoBase64, date) {
             tabStops: [
               {
                 type: TabStopType.RIGHT,
-                position: 9026,
+                position: 7200,
               },
             ],
           }),
