@@ -163,6 +163,7 @@ export async function generateDocx(businessName, content, logoBase64, date) {
             size: 48,
             bold: true,
             font: "Arial",
+            color: "1E64B4",
           }),
         ],
         heading: HeadingLevel.HEADING_1,
