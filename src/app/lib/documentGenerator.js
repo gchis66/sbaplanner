@@ -24,15 +24,13 @@ import { Packer } from "docx";
 
 function convertContentToSections(content) {
   // Split content into sections based on headings
-  const sections = content.split(/(?=\n[A-Z][^a-z\n:]*:)/);
+  const sections = content.split(/(?=\n[A-Z][A-Z\s/&]+$)/m);
   return sections
     .map((section) => {
       let [title, ...contentLines] = section.trim().split("\n");
 
-      // Just remove the colon and trim
-      title = title
-        .replace(/:\s*$/, "") // Remove trailing colons
-        .trim();
+      // Clean up the title
+      title = title.trim();
 
       return {
         title: title,
@@ -89,20 +87,6 @@ function createTitlePage(businessName, logoBase64, date) {
       alignment: AlignmentType.CENTER,
       spacing: {
         after: 400,
-      },
-    }),
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: "BUSINESS PLAN",
-          size: 36, // 18pt
-          bold: true,
-          font: "Arial",
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: {
-        after: 800,
       },
     }),
     new Paragraph({
@@ -176,7 +160,7 @@ export async function generateDocx(businessName, content, logoBase64, date) {
       })
     );
 
-    // Rest of content processing remains the same
+    // Process content paragraphs
     const contentParagraphs = section.content.split("\n");
     contentParagraphs.forEach((para) => {
       if (para.trim().startsWith("- ")) {
@@ -337,11 +321,6 @@ export async function generatePdf(businessName, content, logoBase64, date) {
     align: "center",
   });
   yPosition += 15;
-
-  // Business Plan subtitle
-  doc.setFontSize(18);
-  doc.text("BUSINESS PLAN", pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 30;
 
   // Date
   doc.setFontSize(12);
