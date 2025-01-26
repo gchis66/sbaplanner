@@ -21,7 +21,6 @@ import {
 } from "docx";
 import { jsPDF } from "jspdf";
 import { Packer } from "docx";
-import sizeOf from "image-size";
 
 function convertContentToSections(content) {
   // Split content into sections based on headings
@@ -46,7 +45,37 @@ function convertContentToSections(content) {
 function createTitlePage(businessName, logoBase64, date) {
   const children = [];
 
-  // Add title page elements first
+  // Add logo if provided
+  if (logoBase64) {
+    try {
+      const base64Data = logoBase64.replace(/^data:image\/\w+;base64,/, "");
+      const maxDimension = 150; // Maximum width or height
+
+      children.push(
+        new Paragraph({
+          children: [
+            new ImageRun({
+              data: Buffer.from(base64Data, "base64"),
+              transformation: {
+                width: maxDimension,
+                height: maxDimension,
+                preserveAspectRatio: true,
+                fitToSquare: true,
+              },
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: {
+            after: 400,
+          },
+        })
+      );
+    } catch (error) {
+      console.error("Error adding logo to DOCX:", error);
+    }
+  }
+
+  // Add title page elements
   children.push(
     new Paragraph({
       children: [
@@ -96,45 +125,6 @@ function createTitlePage(businessName, logoBase64, date) {
       },
     })
   );
-
-  // Add logo after the title elements if provided
-  if (logoBase64) {
-    try {
-      const imageBuffer = Buffer.from(
-        logoBase64.replace(/^data:image\/\w+;base64,/, ""),
-        "base64"
-      );
-
-      // Get original dimensions
-      const dimensions = sizeOf(imageBuffer);
-
-      // Set desired width and calculate height to maintain aspect ratio
-      const desiredWidth = 200; // Width in points
-      const aspectRatio = dimensions.width / dimensions.height;
-      const calculatedHeight = desiredWidth / aspectRatio;
-
-      children.push(
-        new Paragraph({
-          children: [
-            new ImageRun({
-              data: imageBuffer,
-              transformation: {
-                width: desiredWidth,
-                height: calculatedHeight,
-              },
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: {
-            before: 400,
-            after: 400,
-          },
-        })
-      );
-    } catch (error) {
-      console.error("Error adding logo to DOCX:", error);
-    }
-  }
 
   return children;
 }
@@ -314,7 +304,30 @@ export async function generatePdf(businessName, content, logoBase64, date) {
   doc.setFont("helvetica");
 
   // Title Page
-  yPosition = 20;
+  if (logoBase64) {
+    try {
+      const base64Data = logoBase64.replace(/^data:image\/\w+;base64,/, "");
+      const maxDimension = 100; // Maximum width or height
+
+      // For PDF, we'll use the auto-scaling feature of jsPDF
+      const imgX = (pageWidth - maxDimension) / 2;
+      doc.addImage(
+        base64Data,
+        "PNG",
+        imgX,
+        yPosition,
+        maxDimension,
+        maxDimension,
+        undefined,
+        "FAST",
+        0,
+        true
+      );
+      yPosition += maxDimension + 20;
+    } catch (error) {
+      console.error("Error adding logo to PDF:", error);
+    }
+  }
 
   // Company Name
   doc.setFontSize(24);
@@ -340,38 +353,6 @@ export async function generatePdf(businessName, content, logoBase64, date) {
       year: "numeric",
     });
   doc.text(currentDate, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 30;
-
-  // Add logo if provided
-  if (logoBase64) {
-    try {
-      const imageBuffer = Buffer.from(
-        logoBase64.replace(/^data:image\/\w+;base64,/, ""),
-        "base64"
-      );
-
-      // Get original dimensions
-      const dimensions = sizeOf(imageBuffer);
-
-      // Set desired width and calculate height to maintain aspect ratio
-      const desiredWidth = 70; // Width in PDF units
-      const aspectRatio = dimensions.width / dimensions.height;
-      const calculatedHeight = desiredWidth / aspectRatio;
-
-      const imgX = (pageWidth - desiredWidth) / 2;
-      doc.addImage(
-        logoBase64,
-        "PNG",
-        imgX,
-        yPosition,
-        desiredWidth,
-        calculatedHeight
-      );
-      yPosition += calculatedHeight + 20;
-    } catch (error) {
-      console.error("Error adding logo to PDF:", error);
-    }
-  }
 
   // Content pages
   sections.forEach((section) => {

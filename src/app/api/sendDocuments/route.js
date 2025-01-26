@@ -11,11 +11,11 @@ export async function POST(request) {
       await request.json();
 
     // Generate documents with logo if provided
-    const logoBuffer = logo ? Buffer.from(logo.split(",")[1], "base64") : null;
+    const logoBase64 = logo || null; // Pass the base64 string directly
 
     const [pdfBuffer, docxBuffer] = await Promise.all([
-      generatePdf(businessName, plan, logoBuffer, date),
-      generateDocx(businessName, plan, logoBuffer, date),
+      generatePdf(businessName, plan, logoBase64, date),
+      generateDocx(businessName, plan, logoBase64, date),
     ]);
 
     // Send email with attachments
