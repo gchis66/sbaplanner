@@ -183,6 +183,29 @@ export default function BusinessPlanForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if all fields in all steps are filled
+    const allFields = formSteps.flatMap((step) => step.fields);
+    const isFormValid = allFields.every((fieldName) => {
+      // Skip validation for established-only fields if business is new
+      if (
+        establishedOnlyFields.includes(fieldName) &&
+        formData.businessStatus !== "established"
+      ) {
+        return true;
+      }
+      return formData[fieldName].trim() !== "";
+    });
+
+    if (!isFormValid) {
+      setStatus({
+        type: "error",
+        message:
+          "Please fill in all required fields before generating the plan.",
+      });
+      return;
+    }
+
     setIsLoading(true);
     setStatus({ type: null, message: "" });
     setGeneratedPlan("");
@@ -300,8 +323,30 @@ export default function BusinessPlanForm() {
   };
 
   const nextStep = () => {
+    // Check if all fields in current step are filled
+    const currentFields = formSteps[currentStep].fields;
+    const isStepValid = currentFields.every((fieldName) => {
+      // Skip validation for established-only fields if business is new
+      if (
+        establishedOnlyFields.includes(fieldName) &&
+        formData.businessStatus !== "established"
+      ) {
+        return true;
+      }
+      return formData[fieldName].trim() !== "";
+    });
+
+    if (!isStepValid) {
+      setStatus({
+        type: "error",
+        message: "Please fill in all required fields before proceeding.",
+      });
+      return;
+    }
+
     if (currentStep < formSteps.length - 1) {
       setCurrentStep(currentStep + 1);
+      setStatus({ type: null, message: "" });
     }
   };
 
@@ -319,7 +364,7 @@ export default function BusinessPlanForm() {
         <>
           <div key={fieldName} className="mb-6">
             <label className="block mb-2 font-medium text-gray-700">
-              {fieldLabels[fieldName]}
+              {fieldLabels[fieldName]} *
             </label>
             <input
               type="text"
@@ -366,7 +411,7 @@ export default function BusinessPlanForm() {
       return (
         <div key={fieldName} className="mb-6">
           <label className="block mb-2 font-medium text-gray-700">
-            {fieldLabels[fieldName]}
+            {fieldLabels[fieldName]} *
           </label>
           <select
             name={fieldName}
@@ -397,7 +442,7 @@ export default function BusinessPlanForm() {
     return (
       <div key={fieldName} className="mb-6">
         <label className="block mb-2 font-medium text-gray-700">
-          {fieldLabels[fieldName]}
+          {fieldLabels[fieldName]} *
         </label>
         {isTextArea ? (
           <textarea
