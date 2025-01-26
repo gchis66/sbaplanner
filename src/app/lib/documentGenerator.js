@@ -92,6 +92,20 @@ function createTitlePage(businessName, logoBase64, date) {
     new Paragraph({
       children: [
         new TextRun({
+          text: "BUSINESS PLAN",
+          size: 36, // 18pt
+          bold: true,
+          font: "Arial",
+        }),
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: {
+        after: 800,
+      },
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({
           text:
             date ||
             new Date().toLocaleDateString("en-US", {
@@ -321,6 +335,12 @@ export async function generatePdf(businessName, content, logoBase64, date) {
     align: "center",
   });
   yPosition += 15;
+
+  // Business Plan subtitle
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("BUSINESS PLAN", pageWidth / 2, yPosition, { align: "center" });
+  yPosition += 30;
 
   // Date
   doc.setFontSize(12);
