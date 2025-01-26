@@ -477,6 +477,9 @@ export default function BusinessPlanForm() {
             <h2 className="text-2xl font-bold text-gray-800">
               {formSteps[currentStep].title}
             </h2>
+            <p className="mt-2 text-gray-600 italic">
+              Remember, the better your input, the better the output will be :)
+            </p>
           </div>
 
           <form onSubmit={handleSubmit}>
