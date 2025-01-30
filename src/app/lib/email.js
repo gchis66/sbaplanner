@@ -23,6 +23,8 @@ Thank you for using SBA Planner! Your business plan has been generated and is at
 
 The PDF version is ideal for immediate viewing and sharing, while the Word document allows you to make any necessary edits or customizations.
 
+Ready to bring your plan to life? Secure SBA funding today with our trusted lending partner and jumpstart your growth! -> www.sbaplanner.com/funding
+
 Best regards,
 SBA Planner Team
   `;
