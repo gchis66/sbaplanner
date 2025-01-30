@@ -302,7 +302,7 @@ export async function POST(request) {
         },
       ],
       stream: true,
-      temperature: 0.7,
+      temperature: 0.5,
       max_tokens: 4000,
     });
 
