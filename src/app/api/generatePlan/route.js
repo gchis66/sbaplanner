@@ -512,5 +512,8 @@ Additional Requirements:
 - Include relevant industry regulations and compliance requirements
 - Detail specific marketing and sales strategies
 - Outline clear operational procedures
-- Provide specific financial assumptions`;
+- Provide specific financial assumptions
+- Write in flowing paragraphs rather than fragmenting your ideas. Instead of treating each section like an isolated bullet point, let your thoughts connect naturally. When you start a new section, use the header to introduce the topic, then expand on it in complete, well-developed paragraphs that build on each other.
+- Think of section headers as chapter titles in a book - they introduce the theme, but the real substance comes in the paragraphs that follow. Your goal is to tell a coherent story, not just list facts.
+- Avoid writing that feels mechanical`;
 }
