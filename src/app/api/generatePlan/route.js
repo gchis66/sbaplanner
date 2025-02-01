@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
 export const runtime = "edge";
-export const maxDuration = 300;
+export const maxDuration = 600;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -260,11 +260,22 @@ METRICS & MILESTONES
 - Establish review periods
 - Detail growth indicators`;
 
+// Function to get relevant example based on business type
+function getRelevantExample(businessType) {
+  if (businessType === "service" || businessType === "consulting") {
+    return examples.split("EXAMPLE BUSINESS PLAN 2:")[1]; // Get consulting example
+  }
+  return examples.split("EXAMPLE BUSINESS PLAN 2:")[0]; // Get product example
+}
+
 export async function POST(request) {
   const headers = {
     ...corsHeaders,
     "Content-Type": "application/json",
   };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 550000); // Set timeout just under Vercel's limit
 
   try {
     const formData = await request.formData().catch((e) => {
@@ -323,39 +334,41 @@ export async function POST(request) {
     const encoder = new TextEncoder();
 
     try {
-      // Start the OpenAI stream
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "system",
-            content: exampleContext,
-          },
-          {
-            role: "system",
-            content: evaluationGuidelines,
-          },
-          {
-            role: "system",
-            content: examples,
-          },
-          {
-            role: "user",
-            content: generateEnhancedPrompt(userData),
-          },
-        ],
-        stream: true,
-        temperature: 0.5,
-        max_tokens: 4000,
-      });
+      // Start the OpenAI stream with full context
+      const completion = await openai.chat.completions.create(
+        {
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "system",
+              content: exampleContext,
+            },
+            {
+              role: "system",
+              content: evaluationGuidelines,
+            },
+            {
+              role: "system",
+              content: examples,
+            },
+            {
+              role: "user",
+              content: generateEnhancedPrompt(userData),
+            },
+          ],
+          stream: true,
+          temperature: 0.5,
+          max_tokens: 4000,
+        },
+        {
+          signal: controller.signal, // Add abort signal
+        }
+      );
 
-      // Process the stream
-      let currentSection = "";
-      let sectionContent = "";
       let totalContent = "";
 
       for await (const chunk of completion) {
@@ -370,20 +383,34 @@ export async function POST(request) {
         throw new Error("No content generated from OpenAI");
       }
     } catch (error) {
-      await writer.write(
-        encoder.encode(
-          JSON.stringify({
-            error: "Error generating business plan",
-            details: error.message,
-          })
-        )
-      );
+      if (error.name === "AbortError") {
+        await writer.write(
+          encoder.encode(
+            JSON.stringify({
+              error: "Request timeout",
+              details:
+                "The request took too long to process. Please try again. If this persists, try breaking your submission into smaller sections.",
+            })
+          )
+        );
+      } else {
+        await writer.write(
+          encoder.encode(
+            JSON.stringify({
+              error: "Error generating business plan",
+              details: error.message,
+            })
+          )
+        );
+      }
     } finally {
+      clearTimeout(timeoutId);
       await writer.close();
     }
 
     return new Response(stream.readable, { headers });
   } catch (error) {
+    clearTimeout(timeoutId);
     return new Response(
       JSON.stringify({
         error: "Error generating business plan",
