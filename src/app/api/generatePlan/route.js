@@ -263,34 +263,29 @@ METRICS & MILESTONES
 export async function POST(request) {
   const headers = {
     ...corsHeaders,
-    "Content-Type": "text/plain; charset=utf-8",
+    "Content-Type": "application/json",
   };
 
   try {
-    const formData = await request.formData();
-    const userDataString = formData.get("userData");
-
-    // Add validation logging
-    console.log("Received form data:", userDataString);
-
-    const userData = JSON.parse(userDataString);
-
-    // Log parsed user data
-    console.log("Parsed user data:", {
-      businessStatus: userData.businessStatus,
-      businessName: userData.businessName,
-      // Log specific fields for established businesses
-      ...(userData.businessStatus === "established" && {
-        yearsInOperation: userData.yearsInOperation,
-        currentRevenue: userData.currentRevenue,
-        currentEmployees: userData.currentEmployees,
-        currentMarketPresence: userData.currentMarketPresence,
-        marketPosition: userData.marketPosition,
-        existingCustomerBase: userData.existingCustomerBase,
-        operationalHistory: userData.operationalHistory,
-        historicalFinancials: userData.historicalFinancials,
-      }),
+    const formData = await request.formData().catch((e) => {
+      throw new Error(`Failed to parse form data: ${e.message}`);
     });
+
+    const userDataString = formData.get("userData");
+    if (!userDataString) {
+      throw new Error("No userData found in form data");
+    }
+
+    let userData;
+    try {
+      userData = JSON.parse(userDataString);
+    } catch (e) {
+      throw new Error(`Failed to parse userData JSON: ${e.message}`);
+    }
+
+    if (!userData.businessStatus) {
+      throw new Error("Business status is required");
+    }
 
     // Validate required fields for established businesses
     if (userData.businessStatus === "established") {
@@ -309,10 +304,6 @@ export async function POST(request) {
         (field) => !userData[field]?.trim()
       );
       if (missingFields.length > 0) {
-        console.error(
-          "Missing required fields for established business:",
-          missingFields
-        );
         throw new Error(
           `Missing required fields for established business: ${missingFields.join(
             ", "
@@ -321,120 +312,70 @@ export async function POST(request) {
       }
     }
 
+    // Verify OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OpenAI API key is not configured");
+    }
+
     // Create a TransformStream for streaming the response
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     const encoder = new TextEncoder();
 
-    // Log OpenAI request
-    console.log(
-      "Sending request to OpenAI with business status:",
-      userData.businessStatus
-    );
-
-    // Start the OpenAI stream
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "system",
-          content: exampleContext,
-        },
-        {
-          role: "system",
-          content: evaluationGuidelines,
-        },
-        {
-          role: "system",
-          content: examples,
-        },
-        {
-          role: "user",
-          content: generateEnhancedPrompt(userData),
-        },
-      ],
-      stream: true,
-      temperature: 0.5,
-      max_tokens: 4000,
-    });
-
-    let currentSection = "";
-    let sectionContent = "";
-    const sections = [
-      "EXECUTIVE SUMMARY",
-      "COMPANY DESCRIPTION",
-      "MARKET ANALYSIS",
-      "PRODUCT/SERVICE LINE",
-      "MARKETING & SALES",
-      "OPERATIONS",
-      "FINANCIAL PROJECTIONS",
-      "RISK ANALYSIS",
-    ];
-
-    // Process the stream
     try {
-      // Write initial content type for streaming
-      await writer.write(encoder.encode(""));
+      // Start the OpenAI stream
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            role: "system",
+            content: exampleContext,
+          },
+          {
+            role: "system",
+            content: evaluationGuidelines,
+          },
+          {
+            role: "system",
+            content: examples,
+          },
+          {
+            role: "user",
+            content: generateEnhancedPrompt(userData),
+          },
+        ],
+        stream: true,
+        temperature: 0.5,
+        max_tokens: 4000,
+      });
 
-      let totalContent = ""; // Track total content for debugging
+      // Process the stream
+      let currentSection = "";
+      let sectionContent = "";
+      let totalContent = "";
 
       for await (const chunk of completion) {
         const content = chunk.choices[0]?.delta?.content || "";
         if (content) {
-          totalContent += content; // Accumulate content
-
-          // Check if we're starting a new section
-          const matchedSection = sections.find((section) =>
-            content.includes(section)
-          );
-          if (matchedSection) {
-            // Log section transitions
-            console.log(`Starting new section: ${matchedSection}`);
-
-            // If we have content from previous section, write it with proper formatting
-            if (currentSection && sectionContent) {
-              await writer.write(
-                encoder.encode(`\n\n${currentSection}\n${sectionContent}\n`)
-              );
-              sectionContent = "";
-            }
-            currentSection = matchedSection;
-          } else {
-            // Append content to current section
-            sectionContent += content;
-          }
-
-          // Write the content directly to maintain streaming
+          totalContent += content;
           await writer.write(encoder.encode(content));
         }
       }
 
-      // Log completion of content generation
-      console.log(
-        "Successfully generated content length:",
-        totalContent.length
-      );
-
-      // Write any remaining content
-      if (currentSection && sectionContent) {
-        await writer.write(encoder.encode(`\n${sectionContent}`));
+      if (totalContent.length === 0) {
+        throw new Error("No content generated from OpenAI");
       }
     } catch (error) {
-      console.error("Streaming error details:", {
-        error: error.message,
-        stack: error.stack,
-        currentSection,
-        sectionContentLength: sectionContent.length,
-      });
-
       await writer.write(
         encoder.encode(
-          "\n\nError generating business plan. Please try again. Error: " +
-            error.message
+          JSON.stringify({
+            error: "Error generating business plan",
+            details: error.message,
+          })
         )
       );
     } finally {
@@ -443,12 +384,6 @@ export async function POST(request) {
 
     return new Response(stream.readable, { headers });
   } catch (error) {
-    console.error("Fatal error in plan generation:", {
-      error: error.message,
-      stack: error.stack,
-      type: error.constructor.name,
-    });
-
     return new Response(
       JSON.stringify({
         error: "Error generating business plan",
