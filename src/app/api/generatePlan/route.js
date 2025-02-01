@@ -50,9 +50,9 @@ Created on December 29, 2016
 
 Executive Summary
 Product
-Wooden Grain Toys manufactures high-quality toys for children aged 3-10. All toys are made from solid hardwoods including maple, beech, birch, cherry, and oak. The toys are built to be long lasting with sufficient moving parts to engage each child’s interest, but not limit his or her imagination. 
+Wooden Grain Toys manufactures high-quality toys for children aged 3-10. All toys are made from solid hardwoods including maple, beech, birch, cherry, and oak. The toys are built to be long lasting with sufficient moving parts to engage each child's interest, but not limit his or her imagination. 
 Customers
-The target audience for Wooden Grain Toys is adults, specifically parents and grandparents who wish to give their children or grandchildren the opportunity to play with a toy that is not only durable and aesthetically pleasing, but also foster the child’s creativity.
+The target audience for Wooden Grain Toys is adults, specifically parents and grandparents who wish to give their children or grandchildren the opportunity to play with a toy that is not only durable and aesthetically pleasing, but also foster the child's creativity.
 Future of the Company
 Although the toy manufacturing business is highly competitive, we believe that there is a place for high-quality, attractive, durable, and affordable toys. Our goal is to build and market toys that will entertain children and stand the test of time.
 
@@ -117,7 +117,7 @@ Research and Development
 The company is planning to conduct the following research and development:
 Include a feedback mechanism on the website for ideas, suggestions, and improvements
 Provide comment cards for distribution at craft fairs
-Review available market research to identify top children’s toys and reason(s) for their popularity
+Review available market research to identify top children's toys and reason(s) for their popularity
 Marketing & Sales
 Growth Strategy
 To grow the company, Wooden Grain Toys will do the following:
@@ -162,7 +162,7 @@ Market Research
 Industry
 We Can Do It Consulting will join the office management and business process improvement consulting industry. Generally, larger consulting firms, such as KEG Consulting, work with international corporations while smaller consulting firms work with both large corporations and smaller organizations, usually closer to home. Consulting firms structured like ours also have a history of working with local, state, and federal government agencies. The consulting industry is still recovering from the economic recession. It was hit hardest in 2009 when the industry shrank by 9.1%. However, as the economy recovers, the industry is showing signs of growth. A recent study stated that operations management consulting is projected to grow by 5.1% per year for the next several years.
 Detailed Description of Customers
-The target customers for We Can Do It Consulting are business owners, human resources directors, program managers, presidents or CEOs with 5 to 500 employees who want to increase productivity and reduce overhead costs. Specifically, we specialize in consulting white collar executives on office processes such as job tracking, production, getting the most out of meetings, leadership, financial or hiring best practices, and other needs relevant to potential customers who serve in a management role within small or large organizations that may be bogged down by processes, bureaucracy, or technical experts with little leadership experience. To capitalize on opportunities that are geographically close as we start and grow our business, We Can Do It Consulting will specifically target executives within companies in the manufacturing, automotive, healthcare, and defense industries. This will allow us to take advantage of the company’s close proximity to hospitals (one of the largest employers in the region), automobile and vehicle parts factories, and government contractors supporting the nearby former Air Force base, now an aviation technology center.
+The target customers for We Can Do It Consulting are business owners, human resources directors, program managers, presidents or CEOs with 5 to 500 employees who want to increase productivity and reduce overhead costs. Specifically, we specialize in consulting white collar executives on office processes such as job tracking, production, getting the most out of meetings, leadership, financial or hiring best practices, and other needs relevant to potential customers who serve in a management role within small or large organizations that may be bogged down by processes, bureaucracy, or technical experts with little leadership experience. To capitalize on opportunities that are geographically close as we start and grow our business, We Can Do It Consulting will specifically target executives within companies in the manufacturing, automotive, healthcare, and defense industries. This will allow us to take advantage of the company's close proximity to hospitals (one of the largest employers in the region), automobile and vehicle parts factories, and government contractors supporting the nearby former Air Force base, now an aviation technology center.
 Company Advantages
 Because We Can Do It Consulting provides services, as opposed to a product, our advantages are only as strong as our consultants. Aside from ensuring our team is flexible, fast, can provide expert advice and can work on short deadlines, we will take the following steps to support consulting services:
 Maintain only PMP-certified project managers
@@ -269,12 +269,68 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
     const userDataString = formData.get("userData");
+
+    // Add validation logging
+    console.log("Received form data:", userDataString);
+
     const userData = JSON.parse(userDataString);
+
+    // Log parsed user data
+    console.log("Parsed user data:", {
+      businessStatus: userData.businessStatus,
+      businessName: userData.businessName,
+      // Log specific fields for established businesses
+      ...(userData.businessStatus === "established" && {
+        yearsInOperation: userData.yearsInOperation,
+        currentRevenue: userData.currentRevenue,
+        currentEmployees: userData.currentEmployees,
+        currentMarketPresence: userData.currentMarketPresence,
+        marketPosition: userData.marketPosition,
+        existingCustomerBase: userData.existingCustomerBase,
+        operationalHistory: userData.operationalHistory,
+        historicalFinancials: userData.historicalFinancials,
+      }),
+    });
+
+    // Validate required fields for established businesses
+    if (userData.businessStatus === "established") {
+      const requiredFields = [
+        "yearsInOperation",
+        "currentRevenue",
+        "currentEmployees",
+        "currentMarketPresence",
+        "marketPosition",
+        "existingCustomerBase",
+        "operationalHistory",
+        "historicalFinancials",
+      ];
+
+      const missingFields = requiredFields.filter(
+        (field) => !userData[field]?.trim()
+      );
+      if (missingFields.length > 0) {
+        console.error(
+          "Missing required fields for established business:",
+          missingFields
+        );
+        throw new Error(
+          `Missing required fields for established business: ${missingFields.join(
+            ", "
+          )}`
+        );
+      }
+    }
 
     // Create a TransformStream for streaming the response
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     const encoder = new TextEncoder();
+
+    // Log OpenAI request
+    console.log(
+      "Sending request to OpenAI with business status:",
+      userData.businessStatus
+    );
 
     // Start the OpenAI stream
     const completion = await openai.chat.completions.create({
@@ -320,60 +376,93 @@ export async function POST(request) {
     ];
 
     // Process the stream
-    (async () => {
-      try {
-        // Write initial content type for streaming
-        await writer.write(encoder.encode(""));
+    try {
+      // Write initial content type for streaming
+      await writer.write(encoder.encode(""));
 
-        for await (const chunk of completion) {
-          const content = chunk.choices[0]?.delta?.content || "";
-          if (content) {
-            // Check if we're starting a new section
-            const matchedSection = sections.find((section) =>
-              content.includes(section)
-            );
-            if (matchedSection) {
-              // If we have content from previous section, write it with proper formatting
-              if (currentSection && sectionContent) {
-                await writer.write(
-                  encoder.encode(`\n\n${currentSection}\n${sectionContent}\n`)
-                );
-                sectionContent = "";
-              }
-              currentSection = matchedSection;
-            } else {
-              // Append content to current section
-              sectionContent += content;
+      let totalContent = ""; // Track total content for debugging
+
+      for await (const chunk of completion) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          totalContent += content; // Accumulate content
+
+          // Check if we're starting a new section
+          const matchedSection = sections.find((section) =>
+            content.includes(section)
+          );
+          if (matchedSection) {
+            // Log section transitions
+            console.log(`Starting new section: ${matchedSection}`);
+
+            // If we have content from previous section, write it with proper formatting
+            if (currentSection && sectionContent) {
+              await writer.write(
+                encoder.encode(`\n\n${currentSection}\n${sectionContent}\n`)
+              );
+              sectionContent = "";
             }
-
-            // Write the content directly to maintain streaming
-            await writer.write(encoder.encode(content));
+            currentSection = matchedSection;
+          } else {
+            // Append content to current section
+            sectionContent += content;
           }
-        }
 
-        // Write any remaining content
-        if (currentSection && sectionContent) {
-          await writer.write(encoder.encode(`\n${sectionContent}`));
+          // Write the content directly to maintain streaming
+          await writer.write(encoder.encode(content));
         }
-      } catch (error) {
-        console.error("Streaming error:", error);
-        await writer.write(
-          encoder.encode(
-            "\n\nError generating business plan. Please try again."
-          )
-        );
-      } finally {
-        await writer.close();
       }
-    })();
+
+      // Log completion of content generation
+      console.log(
+        "Successfully generated content length:",
+        totalContent.length
+      );
+
+      // Write any remaining content
+      if (currentSection && sectionContent) {
+        await writer.write(encoder.encode(`\n${sectionContent}`));
+      }
+    } catch (error) {
+      console.error("Streaming error details:", {
+        error: error.message,
+        stack: error.stack,
+        currentSection,
+        sectionContentLength: sectionContent.length,
+      });
+
+      await writer.write(
+        encoder.encode(
+          "\n\nError generating business plan. Please try again. Error: " +
+            error.message
+        )
+      );
+    } finally {
+      await writer.close();
+    }
 
     return new Response(stream.readable, { headers });
   } catch (error) {
-    console.error("Error:", error);
-    return new Response("Error generating business plan: " + error.message, {
-      status: 500,
-      headers,
+    console.error("Fatal error in plan generation:", {
+      error: error.message,
+      stack: error.stack,
+      type: error.constructor.name,
     });
+
+    return new Response(
+      JSON.stringify({
+        error: "Error generating business plan",
+        details: error.message,
+        type: error.constructor.name,
+      }),
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   }
 }
 
