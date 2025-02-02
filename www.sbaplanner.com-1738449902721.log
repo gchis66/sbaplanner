@@ -1,0 +1,23 @@
+lockdown-install.js:1 Removing unpermitted intrinsics
+page-ec2fdc24cf8b5788.js:1 
+        
+        
+       POST https://www.sbaplanner.com/api/generatePlan 504 (Gateway Timeout)
+j @ page-ec2fdc24cf8b5788.js:1
+uB @ 4bd1b696-c2b7f96abb040ef8.js:1
+(anonymous) @ 4bd1b696-c2b7f96abb040ef8.js:1
+nC @ 4bd1b696-c2b7f96abb040ef8.js:1
+uK @ 4bd1b696-c2b7f96abb040ef8.js:1
+sG @ 4bd1b696-c2b7f96abb040ef8.js:1
+sY @ 4bd1b696-c2b7f96abb040ef8.js:1
+517-14e0f3ddef61eca2.js:1 Error: Error: Failed to generate business plan
+    at j (page-ec2fdc24cf8b5788.js:1:4328)
+push.5194.window.console.error @ 517-14e0f3ddef61eca2.js:1
+j @ page-ec2fdc24cf8b5788.js:1
+await in j
+uB @ 4bd1b696-c2b7f96abb040ef8.js:1
+(anonymous) @ 4bd1b696-c2b7f96abb040ef8.js:1
+nC @ 4bd1b696-c2b7f96abb040ef8.js:1
+uK @ 4bd1b696-c2b7f96abb040ef8.js:1
+sG @ 4bd1b696-c2b7f96abb040ef8.js:1
+sY @ 4bd1b696-c2b7f96abb040ef8.js:1
