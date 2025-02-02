@@ -79,7 +79,7 @@ export default function Home() {
       {/* Hero Section */}
       <div className="bg-gradient-to-b from-blue-600 to-blue-800 min-h-[80vh] flex flex-col items-center justify-center text-white px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-6xl font-bold mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">
             Generate SBA-ready business plans in under 20 minutes
           </h1>
           <p className="text-xl mb-8 opacity-90">
